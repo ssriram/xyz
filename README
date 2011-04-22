@@ -34,7 +34,7 @@ ___  ___ ___ __ ________
     begin is (do ...) a.k.a the lisp chainsaw
     ~index sexpr [list-name 9] or (index list-name 9) returns 9th element
         of list-name or fallsback to the last element, no fiddling like 
-        (cadddddddddr list-name) also adding support for -ve index
+        (cadr (cadddr (caddddr list-name))) also adding support for -ve index
         which can fallback to the first element.
     ~smart strings a.k.a strings with '\0' in them
     ~quasi-quote
