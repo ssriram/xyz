@@ -5,32 +5,59 @@ ___  ___ ___ __ ________
 /__/\_ \ / ____|/_____ \
       \/ \/           \/ 
 
-- a small scheme like implementation
+- a simple hackable scripting language for simply hacking!
+- xyz is a small scheme like implemention born out of pure hobby hacking.
     by ssriram
     http://thenaughtyguy.blogspot.com
+
+- its obvious to find that many languages differ only in functionality and not in syntax 
+    while some differ only in syntax and not in functionality. keeping in mind that 
+    some are very elegant in syntax and some very elegant in functionality, 
+    i was wondering how it would look if i could bridge some of these 
+    syntactics and functionalities into one single language?
   
-- gave my own touch '~' implies not yet ready
-    number type is double -0.234e-23.455
+- my own touches i gave and todo ideas, '~' implies not yet ready
+    flonum is double -0.234e-23.455
+    fixnum is long int 2342342424324234
     hex integer 0x23 0xf4
+    ~binary integer 0b101010101
+    characters are strings with 1 character followed by '\0'
     characters start with # and not #\
-    escape sequences \r\n\t\s\\ a.k.a spl characters #\r #\n #\t #\s #\# #\\
-    true ##t false ##f
+    escape sequences a.k.a spl characters are #\r #\n #\t #\s #\# #\\ not \r\n\t\s\\
+    spl characters are \r\n\t\s\\ inside a string
+    thus the boolean true, false are ##t, ##f not #t #f as in scheme
     hex string "\x03\xde\x34"
+    double quote strings with newline " "
+    ~python style triple quoted strings """ """
     define is (def ...)
     functions a.k.a lambda forms are (fn ...)
-    begin is (do ...)
-    ~int mode number
-    ~smart string
-    ~garbage collection
+    begin is (do ...) a.k.a the lisp chainsaw
+    ~index sexpr [list-name 9] or (index list-name 9) returns 9th element
+        of list-name or fallsback to the last element, no fiddling like 
+        (cadddddddddr list-name) also adding support for -ve index
+        which can fallback to the first element.
+    ~smart strings a.k.a strings with '\0' in them
     ~quasi-quote
     ~vector
     ~unquote
     ~unquote-splicing
+    ~macros,syntax
     ~first class continuation
-    ~call/cc
+    ~call-cc a.k.a call-with-current-continuation
+    ~coroutines
+    ~hashtables
+    ~dynamic linked lists
+    ~garbage collection
+    ~garbage collection routine call from xyz
+    ~namespaces
+    ~python style module system
+    ~support for handling shared libraries a.k.a dynamically linked libraries - dll
     not-ok object for error/invalid sexpr
-    ~module system
-    simple test case
+    ~exception objects - good for backtracing
+    simple test cases
+    ~a small stdlib
+    ~serialized binary modules, which can be loaded without parsing ;)
+    ~refactor code and debug
     
 - further plan
     ~network api
@@ -38,3 +65,6 @@ ___  ___ ___ __ ________
     ~write an exploit
     ~write an exploit generator
     ~bytecode compiler and interpreter/vm
+    ~write xyz in xyz and bootstrap
+    ~write a small http server in xyz
+    ~async io/network support

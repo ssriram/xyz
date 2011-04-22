@@ -3,7 +3,7 @@
 */
 
 #define XYZCVERSION 1.0
-#define XYZCUPDATED april-02-2011
+#define XYZCUPDATED april-22-2011
 
 /*
 */
@@ -583,8 +583,6 @@ z *zread_pair(FILE *in)
 
 /*eval*/
 
-
-
 z *var_bind(z *scope, z *pvar, z *pval)
 {
     z *scope1, *pvars, *pvals;
@@ -606,6 +604,29 @@ z *var_bind(z *scope, z *pvar, z *pval)
     return obj_ok;
 }
 
+z *var_val(z *scope, z *pvar)
+{
+    z *scope1, *pvars, *pvals;
+    while(!is_null(scope))
+    {
+        scope1=car(scope);
+        pvars=get_vars(scope1);
+        pvals=get_vals(scope1);
+        while(!is_null(pvars))
+        {
+            if(pvar==car(pvars))
+            {
+                return car(pvals);
+            }
+            pvars = cdr(pvars);
+            pvals = cdr(pvals);
+        }
+        scope=cdr(scope);
+    }
+    fprintf(stderr,"error: undefined variable\n");
+    //exit(1);
+    return obj_notok;
+}
 
 z *parse_def_var(z *o)
 {
@@ -616,17 +637,36 @@ z *parse_def_var(z *o)
 z *parse_def_val(z *o)
 {
     if(is_symbol(cadr(o))) return caddr(o);
-    else return parse_fn_body(cdadr(o),cddr(o));
+    //else return parse_fn_body(cdadr(o),cddr(o));
 }
 
+z *parse_set_var(z *o)
+{
+    if(is_symbol(cadr(o))) return cadr(o);
+    else
+    {
+        fprintf(stderr,"error: (set <var> <val>) expected\n");
+        return obj_notok;
+    }
+}
 
-
-
+z *parse_set_val(z *o)
+{
+    if(is_symbol(cadr(o))) return caddr(o);
+    else
+    {
+        fprintf(stderr,"error: (set <var> <val>) expected\n");
+        return obj_notok;
+    }
+}
 
 z *zeval(z *scope, z *exp)
 {
+    tailcalll:
     if(is_self_evalable(exp)){return exp;}
-    else if(is_quoted(exp)){return cadr(exp);}
+    else if(is_symbol(exp)){return var_val(scope,exp);}
+    else if(is_tagged(exp,obj_quote)){return cadr(exp);}
+    else if(is_tagged(exp,obj_def)){return var_bind(scope,parse_def_var(exp),parse_def_val(exp));}
     else
     {
         fprintf(stderr,"error: cannot eval, invalid symbolic expression\n");
@@ -751,10 +791,11 @@ int main()
     //printf("%s","*xyz* - a small scheme like implementation\n\n");
     
     init();
+    z *s=cons(cons(obj_null,obj_null),empty_scope);
     while(1)
     {
         printf("xyz> ");
-        zprint(stdout,zeval(0,zread(stdin)));
+        zprint(stdout,zeval(s,zread(stdin)));
         printf("\n");
     }
        

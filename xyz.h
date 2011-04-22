@@ -3,7 +3,7 @@
 */
 
 #define XYZHVERSION 1.0
-#define XYZHUPDATED april-02-2011
+#define XYZHUPDATED april-22-2011
 
 /*
 */
@@ -38,7 +38,9 @@ typedef enum types
     tbool = 1<<4,tstring = 1<<5,tsymbol = 1<<6,
     tfn = 1<<7,tnfn = 1<<8,teof =1<<9,
     tiport = 1<<11,toport = 1<<12,
-    tsyntax = 1<<13,tmacro = 1<<14,
+    tenv = 1<<13,tscope = 1<<14,tclosure = 1<<15,
+    tcont = 1<<16,texcep = 1<<17,tsyntax = 1<<18,
+    tlink = 1<<19,
 
     gcprotect = 1<<30,
     gcmark = 1<<31,
@@ -305,17 +307,39 @@ inline int is_tagged(z *o, z *tag)
     return 0;
 }
 
-inline int is_quoted(z *o){return is_tagged(o,obj_quote);}
+/*
+environment
+    packages
+        modules
+            symbols
+
+__global__
+    __main__
+        tray
+        
+
+(import "stdlib->asdf" "stdlib->(ss@s bb cc d@dded e f)" "stdio" "math->")
+(export "(func1 func2 func3)")
+(def (codes name)
+	(def codelist null)
+	(let loop ((c (car name)))
+		(append codelist (order c))
+		(loop (set codelist (cadr name))))))
+*/
 
 
 z *make_env();
 z *setup_scope();
 inline z *get_vars(z *o){return car(o);}
 inline z *get_vals(z *o){return cdr(o);}
-z *var_bind(z *scope, z *pvars, z *pvals);
+z *var_bind(z *scope, z *pvar, z *pval);
+z *var_val(z *scope, z *pvar);
 
 z *parse_def_var(z *o);
 z *parse_def_val(z *o);
+z *parse_set_var(z *o);
+z *parse_set_val(z *o);
+
 
 z *zeval(z *scope, z *exp);
 

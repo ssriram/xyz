@@ -1,7 +1,13 @@
-# xyz - a small scheme like implementation
-#	by ssriram
-#	http://thenaughtyguy.blogspot.com
-
+#   ___  ___ ___ __ ________
+#   \  \/  /<   |  |\___   /
+#    >    <  \___  | /    / 
+#   /__/\_ \ / ____|/_____ \
+#         \/ \/           \/ 
+#
+#   - a simple hackable scripting language for simply hacking!
+#   - xyz is a small scheme like implemention born out of pure hobby hacking.
+#       by ssriram
+#       http://thenaughtyguy.blogspot.com
 
 all : xyz
 
