@@ -1,21 +1,21 @@
 
 ___  ___ ___ __ ________
 \  \/  /<   |  |\___   /
- >    <  \___  | /    / 
+ >    <  \___  | /    /
 /__/\_ \ / ____|/_____ \
-      \/ \/           \/ 
+      \/ \/           \/
 
 - a simple hackable scripting language for simply hacking!
-- xyz is a small scheme like implemention born out of pure hobby hacking.
+- xyz is a small scheme like implementation born out of pure hobby hacking.
     by ssriram
     http://thenaughtyguy.blogspot.com
 
-- its obvious to find that many languages differ only in functionality and not in syntax 
-    while some differ only in syntax and not in functionality. keeping in mind that 
-    some are very elegant in syntax and some very elegant in functionality, 
-    i was wondering how it would look if i could bridge some of these 
+- its obvious to find that many languages differ only in functionality and not in syntax
+    while some differ only in syntax and not in functionality. keeping in mind that
+    some are very elegant in syntax and some very elegant in functionality,
+    i was wondering how it would look if i could bridge some of these
     syntactics and functionalities into one single language?
-  
+
 - my own touches i gave and todo ideas, '~' implies not yet ready
     flonum is double -0.234e-23.455
     fixnum is long int 2342342424324234
@@ -33,7 +33,7 @@ ___  ___ ___ __ ________
     functions a.k.a lambda forms are (fn ...)
     begin is (do ...) a.k.a the lisp chainsaw
     ~index sexpr [list-name 9] or (index list-name 9) returns 9th element
-        of list-name or fallsback to the last element, no fiddling like 
+        of list-name or fallsback to the last element, no fiddling like
         (cadr (cadddr (caddddr list-name))) also adding support for -ve index
         which can fallback to the first element.
     ~smart strings a.k.a strings with '\0' in them
@@ -58,7 +58,7 @@ ___  ___ ___ __ ________
     ~a small stdlib
     ~serialized binary modules, which can be loaded without parsing ;)
     ~refactor code and debug
-    
+
 - further plan
     ~async io/network api
     ~write a shellcode generator
