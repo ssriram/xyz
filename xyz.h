@@ -3,7 +3,7 @@
 */
 
 #define XYZHVERSION 1.0
-#define XYZHUPDATED april-22-2011
+#define XYZHUPDATED may-29-2011
 
 /*
 */
@@ -100,6 +100,7 @@ z *obj_unquote;
 z *obj_unquotesplice;
 
 z *symbols;
+z *gtray;
 z *empty_scope;
 z *global_scope;
 
@@ -110,7 +111,7 @@ struct stacknode
 	void *p;
 	struct stacknode *link;
 };
- 
+
 struct dstack
 {
     size_t size;
@@ -200,6 +201,17 @@ inline struct z *cdr(struct z *o)
     return 0;
 }
 
+inline struct z *index(struct z *o, size_t n)
+{
+    struct z *p1,*p2;
+    if(o && TYPEGET(o,tpair))
+    {
+        for(p1=o->val.pair.car,p2=o->val.pair.cdr;((n>0) && (p2!=0));n--,p1=car(p2),p2=cdr(p2));
+            return p1;
+    }
+    return 0;
+}
+
 #define caar(obj) car(car(obj))
 #define cadr(obj) car(cdr(obj))
 #define cdar(obj) cdr(car(obj))
@@ -251,7 +263,7 @@ z *make_bool(int v);
 z *make_string(char *v);
 z *make_num(double v);
 z *make_inum(long int v);
-z *make_symbol(char *v);
+z *make_symbol(z *scope,char *v);
 
 z *cons(z *pcar, z *pcdr);
 
@@ -272,7 +284,7 @@ inline int is_init(int ch)
     return isalpha(ch) || ch=='*' || ch=='/' ||
                 ch=='>' || ch=='<' || ch=='=' ||
                 ch=='?' || ch=='!' || ch=='_' ||
-                ch=='%' || ch=='@' || ch=='~' ||
+                ch=='%' || ch=='.' || ch=='~' ||
                 ch=='$' || ch=='^' || ch=='&' ||
                 ch=='|' || ch==':';
 }
@@ -287,8 +299,8 @@ inline int is_hex(int ch)
 int zread_next_char(FILE *in);
 void zread_skipws(FILE *in);
 void zread_skipstr(FILE *in, char *s);
-z *zread(FILE *in);
-z *zread_pair(FILE *in);
+z *zread(z *scope,FILE *in);
+z *zread_pair(z *scope,FILE *in);
 
 inline int is_self_evalable(z *o)
 {
@@ -316,7 +328,7 @@ environment
 __global__
     __main__
         tray
-        
+
 
 (import "stdlib->asdf" "stdlib->(ss@s bb cc d@dded e f)" "stdio" "math->")
 (export "(func1 func2 func3)")
@@ -325,6 +337,21 @@ __global__
 	(let loop ((c (car name)))
 		(append codelist (order c))
 		(loop (set codelist (cadr name))))))
+
+
+(import "stdlib.asdf" "stdlib.(ss@s bb cc d@dded e f)" "stdio" "math.*")
+'(1 2 . (2 3))
+'(1 2 : (2 3))
+
+
+
+tray
+
+scope = null null
+        null
+
+
+
 */
 
 
@@ -369,6 +396,7 @@ z *is_eof_nfn(z *args);
 
 z *cons_nfn(z *args);
 z *car_nfn(z *args);
+
 z *cdr_nfn(z *args);
 z *set_car_nfn(z *args);
 z *set_cdr_nfn(z *args);

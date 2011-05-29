@@ -3,7 +3,7 @@
 */
 
 #define XYZCVERSION 1.0
-#define XYZCUPDATED april-22-2011
+#define XYZCUPDATED may-29-2011
 
 /*
 */
@@ -73,18 +73,20 @@ z *cons(z *pcar, z *pcdr) //cons a.k.a make_pair
     return p;
 }
 
-z *make_symbol(char *name)
+/*z *make_symbol(z *scope, char *name)
 {
     z *p, *sym;
     sym=symbols;
+	int idx=0;
     while(!is_null(sym))
     {
-        //printf("%u %s",sym,sym->val.sym);
         if(strcmp(car(sym)->val.s,name)==0)
         {
+			printf("%u %s at %d\n",(unsigned)car(sym),car(sym)->val.s,idx);
             return car(sym);
         }
         sym=cdr(sym);
+		idx++;
     }
     p=make_obj();
     TYPESET(p,tsymbol);
@@ -93,7 +95,106 @@ z *make_symbol(char *name)
     strcpy(p->val.s,name);
     symbols=cons(p,symbols);
     return p;
+}*/
+
+void splitmodobj(char *name, char schar, char *modname, char *objname)
+{
+    int i = 0;
+    int j = 0;
+    int flag = 0;
+
+    while (name[i] != '\0')
+    {
+        if (flag == 0)
+        {
+            if (name[i] == schar)
+            {
+                flag = 1;
+                modname[i] = '\0';
+            }
+            else
+            {
+                modname[i] = name[i];
+            }
+        }
+        else
+        {
+            objname[j++] = name[i];
+        }
+    i++;
+    }
 }
+
+
+z *findobj(z *objs, char *name)
+{
+    z *p, *sym;
+    sym=objs;
+	int idx=0;
+    while(!is_null(sym))
+    {
+        if(strcmp(car(sym)->val.s,name)==0)
+        {
+			printf("%u %s at %d\n",(unsigned)car(sym),car(sym)->val.s,idx);
+            return car(sym);
+        }
+        sym=cdr(sym);
+		idx++;
+    }
+    p=make_obj();
+    TYPESET(p,tsymbol);
+    p->val.s=malloc(strlen(name)+1);
+    if(!p->val.s){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
+    strcpy(p->val.s,name);
+    objs=cons(objs,p);
+    return p;
+}
+
+z *make_symbol(z *scope, char *name)
+{
+    char modname[30],objname[30];
+    z *obj, *tray, *currmod, *currobjs;
+    splitmodobj(name,':',modname,objname);
+    if(modname)
+    {
+        tray=gtray;
+        while(!is_null(tray))
+        {
+            currmod=car(tray);
+            if(strcmp(car(currmod).val->s,modname)==0)
+            {
+                currobjs=cdr(currmod);
+                return findobj(currobjs,objname);
+            }
+            tray=cdr(tray);
+        }
+        fprintf(stderr,"error: undefined module\n");
+        return obj_notok;
+    }
+    else
+    {
+        tray=gtray;
+        while(!is_null(tray))
+        {
+            currmod=car(tray);
+            if(strcmp(car(currmod).val->s,"main")==0))
+            {
+                currobjs=cdr(currmod);
+                return findobj(currobjs,objname);
+            }
+            tray=cdr(tray);
+        }
+        fprintf(stderr,"error: main module not found\n");
+        return obj_notok
+    }
+}
+
+
+
+
+////////////
+
+
 
 z *make_nfn(z *(*pnfn)(struct z *scope, struct z *args))
 {
@@ -139,26 +240,29 @@ void init()
     obj_false=make_obj();
     TYPESET(obj_false,tbool);
     obj_false->val.i=0;
-    
+
     symbols=obj_null;
     empty_scope=obj_null;
-    
-    obj_quote=make_symbol("quote");
-    obj_def=make_symbol("def");
-    obj_set=make_symbol("set");
-    obj_ok=make_symbol("ok");
-    obj_notok=make_symbol("not-ok");
-    obj_if=make_symbol("if");
-    obj_fn=make_symbol("fn");
-    obj_do=make_symbol("do");
-    obj_cond=make_symbol("cond");
-    obj_else=make_symbol("else");
-    obj_let=make_symbol("let");
-    obj_and=make_symbol("and");
-    obj_or=make_symbol("or");
-    obj_quasiquote=make_symbol("quasiquote");
-    obj_unquote=make_symbol("unquote");
-    obj_unquotesplice=make_symbol("unquotesplice");
+}
+
+void load_default_symbols(z *scope)
+{
+	obj_quote=make_symbol(scope,"quote");
+    obj_def=make_symbol(scope,"def");
+    obj_set=make_symbol(scope,"set");
+    obj_ok=make_symbol(scope,"ok");
+    obj_notok=make_symbol(scope,"not-ok");
+    obj_if=make_symbol(scope,"if");
+    obj_fn=make_symbol(scope,"fn");
+    obj_do=make_symbol(scope,"do");
+    obj_cond=make_symbol(scope,"cond");
+    obj_else=make_symbol(scope,"else");
+    obj_let=make_symbol(scope,"let");
+    obj_and=make_symbol(scope,"and");
+    obj_or=make_symbol(scope,"or");
+    obj_quasiquote=make_symbol(scope,"quasiquote");
+    obj_unquote=make_symbol(scope,"unquote");
+    obj_unquotesplice=make_symbol(scope,"unquotesplice");
 }
 
 
@@ -215,7 +319,7 @@ void skip_str(FILE *in,char *s)
     }
 }
 
-z *zread(FILE *in)
+z *zread(z *scope, FILE *in)
 {
     int ch;
     char numbuff[NUMBUFFSIZE];
@@ -262,7 +366,7 @@ z *zread(FILE *in)
             case '\\':
             {
                 ch=getc(in);
-                
+
                 switch(ch)
                 {
                     case 'r':
@@ -302,7 +406,7 @@ z *zread(FILE *in)
             }
         }
     }
-    
+
     /*number*/
     else if(isdigit(ch) || ((ch=='-' || ch=='+')&& isdigit(zread_next_char(in))))
     {
@@ -407,7 +511,7 @@ z *zread(FILE *in)
         {
             ungetc(ch,in);
             //printf("%s\n",strbuff);
-            return make_symbol(strbuff);
+            return make_symbol(scope,strbuff);
         }
         else
         {
@@ -508,14 +612,14 @@ z *zread(FILE *in)
 
     else if(ch=='(')
     {
-        return zread_pair(in);
+        return zread_pair(scope,in);
     }
 
     else if(ch=='\'')
     {
-        return cons(obj_quote,cons(zread(in),obj_null));
+        return cons(obj_quote,cons(zread(scope,in),obj_null));
     }
-    
+
     else if(ch==EOF)
     {
         return 0;
@@ -532,7 +636,7 @@ z *zread(FILE *in)
     exit(1);
 }
 
-z *zread_pair(FILE *in)
+z *zread_pair(z *scope,FILE *in)
 {
     int ch;
     z *pcar, *pcdr;
@@ -547,7 +651,7 @@ z *zread_pair(FILE *in)
     }
     ungetc(ch,in);
 
-    pcar=zread(in);
+    pcar=zread(scope,in);
     zread_skipws(in);
     ch=getc(in);
 
@@ -561,7 +665,7 @@ z *zread_pair(FILE *in)
             //exit(1);
             return obj_notok;
         }
-        pcdr=zread(in);
+        pcdr=zread(scope,in);
         zread_skipws(in);
         ch=getc(in);
         if(ch!=')')
@@ -576,9 +680,9 @@ z *zread_pair(FILE *in)
     else
     {
         ungetc(ch,in);
-        pcdr=zread_pair(in);
+        pcdr=zread_pair(scope,in);
         return cons(pcar,pcdr);
-    }    
+    }
 }
 
 /*eval*/
@@ -789,16 +893,20 @@ int main()
     //char b[]="___  ___ ___ __ ________\n\\  \\/  /<   |  |\\___   /\n >    <  \\___  | /    / \n/__/\\_ \\ / ____|/_____ \\\n      \\/ \\/           \\/ \n";
     //printf("%s",b);
     //printf("%s","*xyz* - a small scheme like implementation\n\n");
-    
+
     init();
+    gtray=cons(
+            cons(obj_null,
+                    cons(obj_null,obj_null)),obj_null);
     z *s=cons(cons(obj_null,obj_null),empty_scope);
+	load_default_symbols(s);
     while(1)
     {
         printf("xyz> ");
-        zprint(stdout,zeval(s,zread(stdin)));
+        zprint(stdout,zeval(s,zread(s,stdin)));
         printf("\n");
     }
-       
+
     return 0;
 }
 
@@ -820,7 +928,7 @@ int dstack_push(struct dstack *st, void *p)
         st->list->link = st->head;
         st->head= st->list;
         st->size++;
-        
+
         return 0;
     }
     else
@@ -828,7 +936,7 @@ int dstack_push(struct dstack *st, void *p)
         return 1;
     }
 }
- 
+
 void *dstack_pop(struct dstack *st)
 {
     if(st)
@@ -849,7 +957,7 @@ void *dstack_pop(struct dstack *st)
     {
         return 0;
     }
-	
+
 }
 
 void dstack_pop2(struct dstack *st)
@@ -857,7 +965,7 @@ void dstack_pop2(struct dstack *st)
     void *p=dstack_pop(st);
     p=0;
 }
- 
+
 void dstack_init(struct dstack *st)
 {
     if(st)
@@ -930,7 +1038,7 @@ void htable_put(hashnode *ht, char *str, void *v)
     {
         htable_resolve(ht, index, str, v);
     }
-    else 
+    else
     {
         ht[index].key = calloc(strlen(str) + 1, sizeof(char));
         strcpy(ht[index].key, str);
@@ -962,7 +1070,7 @@ void htable_dump(hashnode *ht, FILE *out)
         if(ht[i].value != 0)
         {
             target = ht + i;
-            while(target) 
+            while(target)
             fprintf(out,"index[%d] key[%s] value[%u]",i,target->key,(unsigned)target->value);
             target = target->next;
         }

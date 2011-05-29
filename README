@@ -60,11 +60,9 @@ ___  ___ ___ __ ________
     ~refactor code and debug
     
 - further plan
-    ~network api
+    ~async io/network api
     ~write a shellcode generator
     ~write an exploit
-    ~write an exploit generator
     ~bytecode compiler and interpreter/vm
     ~write xyz in xyz and bootstrap
     ~write a small http server in xyz
-    ~async io/network support
