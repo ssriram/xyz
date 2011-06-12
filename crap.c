@@ -1,6 +1,6 @@
 /*
 
-this is the crap.c file which i use to test crap and once i 
+this is the crap.c file which i use to test crap and once i
 feel it doesn't smell like real crap will add it into the core
 
 */
@@ -10,7 +10,7 @@ feel it doesn't smell like real crap will add it into the core
 #include <string.h>
 #include <stdlib.h>
 
-splitmodobj(char *name, char schar, char *modname, char *objname)
+void splitmodobj(char *name, char schar, char *modname, char *objname)
 {
     int i = 0;
     int j = 0;
@@ -22,6 +22,7 @@ splitmodobj(char *name, char schar, char *modname, char *objname)
         {
             if (name[i] == schar)
             {
+                printf("%c",name[i]);
                 flag = 1;
                 modname[i] = '\0';
             }
@@ -33,11 +34,14 @@ splitmodobj(char *name, char schar, char *modname, char *objname)
         else
         {
             objname[j++] = name[i];
+            objname[j]='\0';
         }
     i++;
     }
 }
 
+
+/*
 
 z *findobj(z *objs, char *name)
 {
@@ -66,7 +70,7 @@ z *findobj(z *objs, char *name)
 z *make_symbol(char *name)
 {
     char modname[30],objname[30];
-    z *obj, *tray, *currmod, *currobjs;;    
+    z *obj, *tray, *currmod, *currobjs;;
     splitmodobj(name,':',modname,objname);
     if(modname)
     {
@@ -98,15 +102,16 @@ z *make_symbol(char *name)
             tray=cdr(tray);
         }
         fprintf(stderr,"error: main module not found\n");
-        return obj_notok
+        return obj_notok;
     }
 }
 
+*/
 
 
 
 
-z *make_list()
+//z *make_list()
 
 
 
@@ -117,9 +122,9 @@ int main()
 {
     char m[30],o[30];
     char *n="module1:abc:sdffgdf";
-    
+
     splitmodobj(n,':',m,o);
-    
+
     printf("%s\n",m);
     printf("%s\n",o);
 }
@@ -129,7 +134,7 @@ int main()
 tray
     module
         symbol table
-        
+
     main
         symbol table
 

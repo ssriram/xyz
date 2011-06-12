@@ -203,7 +203,6 @@ void break_obj(struct z *o);
 #define NUMBUFFSIZE 33
 /*max chararcters a string can have in input*/
 #define STRBUFFSIZE 1025
-/*normal string can have MAX(size_t) as length*/
 
 /*scheme functions*/
 
