@@ -97,31 +97,6 @@ z *cons(z *pcar, z *pcdr) //cons a.k.a make_pair
     return p;
 }
 
-/*z *make_symbol(z *scope, char *name)
-{
-    z *p, *sym;
-    sym=symbols;
-	int idx=0;
-    while(!is_null(sym))
-    {
-        if(strcmp(car(sym)->val.s,name)==0)
-        {
-			printf("%u %s at %d\n",(unsigned)car(sym),car(sym)->val.s,idx);
-            return car(sym);
-        }
-        sym=cdr(sym);
-		idx++;
-    }
-    p=make_obj();
-    TYPESET(p,tsymbol);
-    p->val.s=malloc(strlen(name)+1);
-    if(!p->val.s){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
-    strcpy(p->val.s,name);
-    symbols=cons(p,symbols);
-    return p;
-}*/
-
-
 void splitmodobj(char *name, char schar, char *modname, char *objname)
 {
     int i = 0;
