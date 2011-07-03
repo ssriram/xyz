@@ -61,7 +61,9 @@ typedef enum types
     tnull = 1,tpair = 1<<1,tinum = 1<<2,tnum = 1<<3,
     tbool = 1<<4,tstring = 1<<5,tsymbol = 1<<6,
     tfn = 1<<7,tnfn = 1<<8,teof =1<<9,
+    
     tiport = 1<<11,toport = 1<<12,
+    
     tenv = 1<<13,tscope = 1<<14,tclosure = 1<<15,
     tcont = 1<<16,texcep = 1<<17,tsyntax = 1<<18,
     tlink = 1<<19,

@@ -311,7 +311,7 @@ void init()
 
 void load_default_symbols(z *scope)
 {
-	obj_quote=make_symbol(scope,"quote");
+    obj_quote=make_symbol(scope,"quote");
     obj_def=make_symbol(scope,"def");
     obj_set=make_symbol(scope,"set");
     obj_ok=make_symbol(scope,"ok");
@@ -1086,10 +1086,10 @@ int htable_hash1(char *str)
     return index % HASHSIZE;
 }
 
-int htable_hash2(char *str,int MULTIPLIERiplier,int items)
+int htable_hash2(char *str,int MULTIPLIER, int items)
 {
     unsigned int h_=0;
-    for(;*str;str++) h_= MULTIPLIERiplier * h_ + *str;
+    for(;*str;str++) h_= MULTIPLIER * h_ + *str;
     return h_ % items;
 }
 
