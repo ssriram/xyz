@@ -161,7 +161,7 @@ z *createobj(z *objs, char *name)
         objs=cons(objs,obj);
         return obj;
     }
-    print("error: invalid objname / memory access\n");
+    fprintf(stderr,"error: invalid objname / memory access\n");
     return obj_notok;
 }
 
@@ -195,7 +195,7 @@ else
             while(!is_null(tray))
             {
                 currmod=car(tray);
-                if(strcmp(car(currmod).val->s,modname)==0)
+                if(strcmp(car(currmod)->val.s,modname)==0)
                 {
                     //module present
                     currobjs=cdr(currmod);
@@ -229,7 +229,7 @@ else
         while(!is_null(tray))
         {
             currmod=car(tray);
-            if(strcmp(car(currmod).val->s,"main")==0))
+            if(strcmp(car(currmod)->val.s,"main")==0)
             {
                 //main module present
                 currobjs=cdr(currmod);
@@ -1086,10 +1086,10 @@ int htable_hash1(char *str)
     return index % HASHSIZE;
 }
 
-int htable_hash2(char *str,int MULTIPLIER, int items)
+int htable_hash2(char *str,int multi, int items)
 {
     unsigned int h_=0;
-    for(;*str;str++) h_= MULTIPLIER * h_ + *str;
+    for(;*str;str++) h_= multi * h_ + *str;
     return h_ % items;
 }
 

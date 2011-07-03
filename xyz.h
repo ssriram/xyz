@@ -226,7 +226,7 @@ inline struct z *cdr(struct z *o)
     return 0;
 }
 
-inline struct z *index(struct z *o, size_t n)
+/*inline struct z *index(struct z *o, size_t n)
 {
     struct z *p1,*p2;
     if(o && TYPEGET(o,tpair))
@@ -235,7 +235,7 @@ inline struct z *index(struct z *o, size_t n)
             return p1;
     }
     return 0;
-}
+}*/
 
 #define caar(obj) car(car(obj))
 #define cadr(obj) car(cdr(obj))
