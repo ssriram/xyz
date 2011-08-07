@@ -26,8 +26,8 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define XYZHVERSION 1.0
-#define XYZHUPDATED june-06-2011
+#define XYZHVERSION 1
+#define XYZHUPDATED aug062011
 
 /*
 */
@@ -51,6 +51,72 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifdef WINDOWS
 #endif
 
+
+/*
+ memory functions
+*/
+
+#ifdef MEMDEBUG
+
+void *(*_malloc_old) (size_t size) = malloc;
+void (*_free_old) (void *ptr) = free;
+
+#define malloc(size) _malloc_new (size, __FUNCTION__, __LINE__)
+#define free(ptr) _free_new (ptr)
+
+struct leaklist
+{
+      const char *function;
+      int line;
+      void *ptr;
+      struct leaklist *next;
+};
+
+struct leaklist *list = NULL;
+
+void *_malloc_new (size_t size, const char *function, int line)
+{
+      struct leaklist *e = _malloc_old (sizeof *e);
+      void *ptr = _malloc_old (size);
+      e->function = function;
+      e->line = line;
+      e->ptr = ptr;
+      e->next = list;
+      list = e;
+      return (ptr);
+}
+void *_free_new (void *ptr)
+{
+      struct leaklist *prev = NULL, *e = list;
+      while (e) {
+              if (e->ptr == ptr) {
+                      break;
+              }
+              prev = e;
+              e = e->next;
+      }
+      if (e) {
+              if (e == list) {
+                      list = NULL;
+              }
+              if (prev) {
+                      prev->next = e->next;
+              }
+              _free_old (e);
+      }
+      _free_old (ptr);
+}
+void memstat (FILE *f)
+{
+      struct leaklist *e = list;
+      while (e) {
+              fprintf (f, "%s:%d\t0x%x\n", e->function, e->line, (size_t)e->ptr);
+              e = e->next;
+      }
+
+}
+
+#endif
 
 /*core stuff*/
 
