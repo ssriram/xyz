@@ -36,6 +36,68 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /*gc stuff*/
 
+mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units)
+{
+    mem_pool *mp=NULL,*mp1=NULL,*mp2=NULL;
+    void *vp;
+    if(units && size)
+    {
+        mp=malloc(sizeof(mem_pool));
+        vp=calloc(1,size);
+        mp->type=type;
+        mp->size=size;
+        mp->p=vp;
+        mp->prev=NULL;
+        mp->next=NULL;
+        mp1=mp;
+        //printf("unit: %d\n",units);
+        for(units--;units>0;units--)
+        {
+            mp2=malloc(sizeof(mem_pool));
+            vp=calloc(1,size);
+            mp2->type=type;
+            mp2->size=size;
+            mp2->p=vp;
+            mp2->prev=mp1;
+            mp2->next=NULL;
+            mp1->next=mp2;
+            mp1=mp2;  
+            //printf("unit: %d\n",units);
+        }
+    }
+    return mp;
+}
+
+int break_mem_pool(mem_pool *mp)
+{
+    mem_pool *mp1=NULL,*mp2=NULL;
+    if(mp)
+    {
+        mp1=mp;
+        while(mp1->next)
+        {
+            mp1=mp1->next;
+        };
+        while(mp1->prev)
+        {
+            mp2=mp1->prev;
+            free(mp1->p);
+            //printf("freed memory\n");
+            free(mp1);
+            //printf("freed unit\n");
+            mp1=mp2;
+        };
+        free(mp1->p);
+        //printf("freed memory\n");
+        free(mp1);
+        //printf("freed unit\n");
+        mp=NULL;
+        return 0;
+    }
+    return -1;
+}
+
+
 /*core function definitions*/
 
 z *make_obj()
@@ -131,17 +193,17 @@ z *findobj(z *objs, char *name)
 {
     z *p, *sym;
     sym=objs;
-	int idx=0;
+  int idx=0;
     while(!is_null(sym))
     {
         if(strcmp(car(sym)->val.s,name)==0)
         {
             //obj found
-			printf("%u %s at %d\n",(unsigned)car(sym),car(sym)->val.s,idx);
+      printf("%u %s at %d\n",(unsigned)car(sym),car(sym)->val.s,idx);
             return car(sym);
         }
         sym=cdr(sym);
-		idx++;
+    idx++;
     }
     
     //obj not found
@@ -963,7 +1025,7 @@ int main()
             cons(obj_null,
                     cons(obj_null,obj_null)),obj_null);
     z *s=cons(cons(obj_null,obj_null),empty_scope);
-	load_default_symbols(s);
+  load_default_symbols(s);
     while(1)
     {
         printf("xyz> ");

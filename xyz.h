@@ -52,72 +52,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 
-/*
- memory functions
-*/
-
-#ifdef MEMDEBUG
-
-void *(*_malloc_old) (size_t size) = malloc;
-void (*_free_old) (void *ptr) = free;
-
-#define malloc(size) _malloc_new (size, __FUNCTION__, __LINE__)
-#define free(ptr) _free_new (ptr)
-
-struct leaklist
-{
-      const char *function;
-      int line;
-      void *ptr;
-      struct leaklist *next;
-};
-
-struct leaklist *list = NULL;
-
-void *_malloc_new (size_t size, const char *function, int line)
-{
-      struct leaklist *e = _malloc_old (sizeof *e);
-      void *ptr = _malloc_old (size);
-      e->function = function;
-      e->line = line;
-      e->ptr = ptr;
-      e->next = list;
-      list = e;
-      return (ptr);
-}
-void *_free_new (void *ptr)
-{
-      struct leaklist *prev = NULL, *e = list;
-      while (e) {
-              if (e->ptr == ptr) {
-                      break;
-              }
-              prev = e;
-              e = e->next;
-      }
-      if (e) {
-              if (e == list) {
-                      list = NULL;
-              }
-              if (prev) {
-                      prev->next = e->next;
-              }
-              _free_old (e);
-      }
-      _free_old (ptr);
-}
-void memstat (FILE *f)
-{
-      struct leaklist *e = list;
-      while (e) {
-              fprintf (f, "%s:%d\t0x%x\n", e->function, e->line, (size_t)e->ptr);
-              e = e->next;
-      }
-
-}
-
-#endif
-
 /*core stuff*/
 
 struct z;
@@ -200,15 +134,15 @@ z *global_scope;
 
 struct stacknode
 {
-	void *p;
-	struct stacknode *link;
+  void *p;
+  struct stacknode *link;
 };
 
 struct dstack
 {
-    size_t size;
-	struct stacknode *head;
-	struct stacknode *list;
+  size_t size;
+  struct stacknode *head;
+  struct stacknode *list;
 };
 
 int dstack_push(struct dstack *st, void *data);
@@ -247,25 +181,40 @@ void htable_dump(hashnode *ht, FILE *out);
 
 /*gc stuff*/
 
-static int gcmarktype=1;
-static int gc_on = 1;
 
+static size_t cell_pool_size = 65536;
+static size_t cells_per_pool = cell_pool_size / (sizeof(z)+sizeof(z*));
+
+static int gcmarktype = 1;
+static int gc_on = 1;
 static int low_water_mark = 5000;
 
 void gc_init();
 void gc_shutdown();
 void gc_gc();
 
-static struct dstack *objused,*objfree;
-void init_buckets();
+static struct dstack *root_objects;
 
-void push_used(struct z *o);
-void push_free(struct z *o);
-struct z *pop_used(struct z *o);
-struct z *pop_free(struct z *o);
+void push_root(struct z *o);
+struct z *pop_root(struct z *o);
 
 struct z *make_obj();
 void break_obj(struct z *o);
+
+typedef enum mem_pool_type {cell_pool,bin_pool} mem_pool_type;
+
+typedef struct mem_pool
+{
+    mem_pool_type type;
+    size_t size;
+    void *p;
+    struct mem_pool *prev;
+    struct mem_pool *next;
+} mem_pool;
+
+mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units);
+int break_mem_pool(mem_pool *mp);
+
 
 /*max digits a number can have in input*/
 #define NUMBUFFSIZE 33
@@ -424,10 +373,10 @@ __global__
 (import "stdlib->asdf" "stdlib->(ss@s bb cc d@dded e f)" "stdio" "math->")
 (export "(func1 func2 func3)")
 (def (codes name)
-	(def codelist null)
-	(let loop ((c (car name)))
-		(append codelist (order c))
-		(loop (set codelist (cadr name))))))
+  (def codelist null)
+  (let loop ((c (car name)))
+    (append codelist (order c))
+    (loop (set codelist (cadr name))))))
 
 
 (import "stdlib.asdf" "stdlib.(ss@s bb cc d@dded e f)" "stdio" "math.*")

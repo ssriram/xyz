@@ -9,60 +9,91 @@ feel it doesn't smell like real crap will add it into the core
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "xyz.h"
 
-void splitmodobj(char *name, char schar, char *modname, char *objname)
+typedef enum mem_pool_type {cell_pool,bin_pool} mem_pool_type;
+
+typedef struct mem_pool
 {
-    int i = 0;
-    int j = 0;
-    int flag = 0;
+    mem_pool_type type;
+    size_t size;
+    void *p;
+    struct mem_pool *prev;
+    struct mem_pool *next;
+} mem_pool;
 
-    while (name[i] != '\0')
+mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units);
+int break_mem_pool(mem_pool *mp);
+
+
+mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units)
+{
+    mem_pool *mp=NULL,*mp1=NULL,*mp2=NULL;
+    void *vp;
+    if(units && size)
     {
-        if (flag == 0)
+        mp=malloc(sizeof(mem_pool));
+        vp=calloc(1,size);
+        mp->type=type;
+        mp->size=size;
+        mp->p=vp;
+        mp->prev=NULL;
+        mp->next=NULL;
+        mp1=mp;
+        //printf("unit: %d\n",units);
+        for(units--;units>0;units--)
         {
-            if (name[i] == schar)
-            {
-                flag = 1;
-                modname[i] = '\0';
-            }
-            else
-            {
-                modname[i] = name[i];
-            }
+            mp2=malloc(sizeof(mem_pool));
+            vp=calloc(1,size);
+            mp2->type=type;
+            mp2->size=size;
+            mp2->p=vp;
+            mp2->prev=mp1;
+            mp2->next=NULL;
+            mp1->next=mp2;
+            mp1=mp2;  
+            //printf("unit: %d\n",units);
         }
-        else
-        {
-            objname[j++] = name[i];
-            objname[j]='\0';
-        }
-    i++;
     }
+    return mp;
 }
+
+int break_mem_pool(mem_pool *mp)
+{
+    mem_pool *mp1=NULL,*mp2=NULL;
+    if(mp)
+    {
+        mp1=mp;
+        while(mp1->next)
+        {
+            mp1=mp1->next;
+        };
+        while(mp1->prev)
+        {
+            mp2=mp1->prev;
+            free(mp1->p);
+            //printf("freed memory\n");
+            free(mp1);
+            //printf("freed unit\n");
+            mp1=mp2;
+        };
+        free(mp1->p);
+        //printf("freed memory\n");
+        free(mp1);
+        //printf("freed unit\n");
+        return 0;
+    }
+    return -1;
+}
+
+
+
 
 int main()
 {
-    char m[30],o[30];
-    char *n="module1:abc:sdffgdf";
-
-    splitmodobj(n,':',m,o);
-
-    printf("%s\n",m);
-    printf("%s\n",o);
+    mem_pool *p=make_mem_pool(cell_pool,65536,5);
+    break_mem_pool(p);
+    return 0;
 }
 
-
-/*
-tray
-    module
-        symbol table
-
-    main
-        symbol table
-
-tray => (main mod1 mod2)
-cmodule => main
-
-( (mod1 (a b c d)) (mod2 (e f)) (main (g h a b)) )
-
-*/
 
