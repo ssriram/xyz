@@ -11,21 +11,6 @@ feel it doesn't smell like real crap will add it into the core
 #include <stdlib.h>
 #include "xyz.h"
 
-typedef enum mem_pool_type {cell_pool,bin_pool} mem_pool_type;
-
-typedef struct mem_pool
-{
-    mem_pool_type type;
-    size_t size;
-    void *p;
-    struct mem_pool *prev;
-    struct mem_pool *next;
-} mem_pool;
-
-mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units);
-int break_mem_pool(mem_pool *mp);
-
-
 mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units)
 {
     mem_pool *mp=NULL,*mp1=NULL,*mp2=NULL;
@@ -81,6 +66,7 @@ int break_mem_pool(mem_pool *mp)
         //printf("freed memory\n");
         free(mp1);
         //printf("freed unit\n");
+        mp=NULL;
         return 0;
     }
     return -1;
@@ -88,10 +74,9 @@ int break_mem_pool(mem_pool *mp)
 
 
 
-
 int main()
 {
-    mem_pool *p=make_mem_pool(cell_pool,65536,5);
+    mem_pool *p=make_mem_pool(cell_pool,65536,4);
     break_mem_pool(p);
     return 0;
 }

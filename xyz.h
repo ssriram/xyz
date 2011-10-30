@@ -26,8 +26,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define XYZHVERSION 1
-#define XYZHUPDATED aug062011
+#define XYZH 1-25sep2011
 
 /*
 */
@@ -101,6 +100,8 @@ typedef struct z
 
 #define TYPEGET(x,y) ((x->flags&y)==y)?1:0
 #define TYPESET(x,y) x->flags=x->flags|y
+#define GCGET(s) s->flags&0xf0000000
+#define GCSET(s,t) s->flags=s->flags&(t|0x0fffffff)
 
 /*hard objects*/
 
@@ -181,26 +182,6 @@ void htable_dump(hashnode *ht, FILE *out);
 
 /*gc stuff*/
 
-
-static size_t cell_pool_size = 65536;
-static size_t cells_per_pool = cell_pool_size / (sizeof(z)+sizeof(z*));
-
-static int gcmarktype = 1;
-static int gc_on = 1;
-static int low_water_mark = 5000;
-
-void gc_init();
-void gc_shutdown();
-void gc_gc();
-
-static struct dstack *root_objects;
-
-void push_root(struct z *o);
-struct z *pop_root(struct z *o);
-
-struct z *make_obj();
-void break_obj(struct z *o);
-
 typedef enum mem_pool_type {cell_pool,bin_pool} mem_pool_type;
 
 typedef struct mem_pool
@@ -214,6 +195,28 @@ typedef struct mem_pool
 
 mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units);
 int break_mem_pool(mem_pool *mp);
+
+void init_cell_pool(mem_pool *mp, size_t s);
+
+#define cell_pool_size 65536
+static size_t cells_per_pool = cell_pool_size / (sizeof(struct z)+sizeof(struct z*));
+
+static int gc_on = 1;
+static int gcmarktype = 1;
+static size_t low_water_mark = 5000;
+
+void gc_init();
+void gc_shutdown();
+void gc_gc();
+
+static struct dstack *root_objects;
+
+void push_root(struct z *o);
+struct z *pop_root(struct z *o);
+
+struct z *make_obj();
+void break_obj(struct z *o);
+
 
 
 /*max digits a number can have in input*/

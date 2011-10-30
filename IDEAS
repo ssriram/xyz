@@ -55,6 +55,8 @@ xyz
         of list-name or fallsback to the last element, no fiddling like
         (cadr (cadddr (caddddr list-name))) also adding support for -ve index
         which can fallback to the first element.
+        support car cdr as first,rest, ff,fr,ffr,fff,etc.
+        
     ~smart strings a.k.a strings with '\0' in them
     ~quasi-quote
     ~vector

@@ -26,8 +26,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#define XYZCVERSION 1
-#define XYZCUPDATED aug062011
+#define XYZC 1-25sep2011
 
 /*
 */
@@ -97,8 +96,32 @@ int break_mem_pool(mem_pool *mp)
     return -1;
 }
 
-
-/*core function definitions*/
+void init_cell_pool(mem_pool *mp, size_t s)
+{
+    size_t total=0,i=0,s1;
+    void *start=NULL;
+    void *end=NULL;    
+    if(mp && (mp->type == cell_pool) && s)
+    {
+        total=mp->size / (s + sizeof(void *));
+        printf("total number of %d sized objects in %d sized pool is %d\n",s,mp->size,total);
+    
+        start=mp->p;
+        end=start+mp->size;
+        
+        /*
+         *  <------------------><---------------------------------------------------->
+         *   list of pointers           list of obects
+         */
+        
+        printf("start %x end %x objstart %x",(unsigned)start,(unsigned)end,(unsigned)(start+total));
+        
+        for(i=0;i<total;i++)
+        {
+            *(start+i)=(start+i+total);
+        }
+    }
+}
 
 z *make_obj()
 {
@@ -115,6 +138,9 @@ z *make_obj()
     p->val.fn.body=0;
     return p;
 }
+
+
+/*core function definitions*/
 
 z *make_bool(int b)
 {
@@ -1020,7 +1046,7 @@ int main()
     //printf("%s",b);
     //printf("%s","*xyz* - a small scheme like implementation\n\n");
 
-    init();
+/*    init();
     gtray=cons(
             cons(obj_null,
                     cons(obj_null,obj_null)),obj_null);
@@ -1032,6 +1058,12 @@ int main()
         zprint(stdout,zeval(s,zread(s,stdin)));
         printf("\n");
     }
+*/
+
+
+    mem_pool *p=make_mem_pool(cell_pool,65536,4);
+    init_cell_pool(p,sizeof(struct z));
+    break_mem_pool(p);
 
     return 0;
 }
