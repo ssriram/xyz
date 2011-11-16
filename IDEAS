@@ -4,86 +4,98 @@ ___  ___ ___ __ ________
 /__/\_ \ / ____|/_____ \
       \/ \/           \/
 
-- a simple hackable scripting language for simply hacking!
-- xyz is a small scheme like implementation born out of pure hobby hacking.
-    by ssriram
-    http://thenaughtyguy.blogspot.com
+XYZ
+---
 
-- its obvious to find that many languages differ only in functionality and not in syntax
-    while some differ only in syntax and not in functionality. keeping in mind that
-    some are very elegant in syntax and some very elegant in functionality,
-    i was wondering how it would look if i could bridge some of these
-    syntactics and functionalities into one single language?
+- A simple hackable scripting language for simply hacking!
+- A small scheme like implementation born out of pure hobby hacking by ssriram <http://thenaughtyguy.blogspot.com>
 
+Intended Features
+-----------------
 
-These are some of the common scripting languages that I figured out that
+>   Its obvious to find that many languages differ only in functionality and not in syntax
+>   while some differ only in syntax and not in functionality. Keeping in mind that
+>   some are very elegant in syntax and some very elegant in functionality,
+>   I was wondering how it would look if i could bridge some of these
+>   syntactics and functionalities into one single language making appropriate trade-offs?
+
+- These are some of the common scripting languages that I figured out that
 some of their good features can into xyz.
 
-lua - small embeddable, prototype inheritance
-ruby - good object oriented patterns, good library
-python - good library (batteries), simple syntax
-javascript - functional and C syntax, prototype inheritance, weak typing
-scheme - functional and lisp syntax, r5rs,r6rs,r7rs experimental hacking 
+    * lua - small embeddable, prototype inheritance
+    * ruby - good object oriented patterns, good library
+    * python - good library (batteries), simple syntax, good string support
+    * javascript - functional and C syntax, json, prototype inheritance, weak typing, regular expressions
+    * scheme - functional and lisp syntax, r5rs,r6rs,r7rs standards for experimental hacking
+    * add one more language with good features
 
-
-xyz
+- XYZ will try to be
 
     * small and embeddable
-    * functional and schemey
-    * support simple syntax and weak typing 
-    * support prototype inheritance and good object oriented patterns
-    * hackable and good libraries
-    
+    * simple in syntax
+    * support good object oriented and functional patterns
+    * hackable
+    * support good libraries
 
-- my own touches and ideas, '~' implies not yet ready
-    flonum is double -0.234e-23.455
-    fixnum is long int 2342342424324234
-    hex integer 0x23 0xf4
-    ~binary integer 0b101010101
-    characters are strings with 1 character followed by '\0'
-    characters start with # and not #\
-    escape sequences a.k.a spl characters are #\r #\n #\t #\s #\# #\\ not \r\n\t\s\\
-    spl characters are \r\n\t\s\\ inside a string
-    thus the boolean true, false are ##t, ##f not #t #f as in scheme
-    hex string "\x03\xde\x34"
-    double quote strings with newline " "
-    ~python style triple quoted strings """ """
-    define is (def ...)
-    functions a.k.a lambda forms are (fn ...)
-    begin is (do ...) a.k.a the lisp chainsaw
-    ~index sexpr [list-name 9] or (index list-name 9) returns 9th element
-        of list-name or fallsback to the last element, no fiddling like
-        (cadr (cadddr (caddddr list-name))) also adding support for -ve index
-        which can fallback to the first element.
-        support car cdr as first,rest, ff,fr,ffr,fff,etc.
-        
-    ~smart strings a.k.a strings with '\0' in them
-    ~quasi-quote
-    ~vector
-    ~unquote
-    ~unquote-splicing
-    ~macros,syntax
-    ~first class continuation
-    ~call-cc a.k.a call-with-current-continuation
-    ~coroutines
-    ~hashtables
-    ~dynamic linked lists
-    ~garbage collection
-    ~garbage collection routine call from xyz
-    ~namespaces
-    ~python style module system
-    ~support for handling shared libraries a.k.a dynamically linked libraries - dll
-    not-ok object for error/invalid sexpr
-    ~exception objects - good for backtracing
-    simple test cases
-    ~a small stdlib
-    ~serialized binary modules, which can be loaded without parsing ;)
-    ~refactor code and debug
+- My touches to syntax and ideas; some are plans and some are features !
 
-- further plan
-    ~async io/network api
-    ~write a shellcode generator
-    ~write an exploit
-    ~bytecode compiler and interpreter/vm
-    ~write xyz in xyz and bootstrap
-    ~write a small http server in xyz    
+    * types
+        1. null
+        2. boolean
+        3. character
+        4. number
+            a. fixnum
+            b. flonum
+        5. string
+            a. double quote strings
+            b. python style triple quote strings
+        6. symbol
+        7. s-expression ()
+        8. vector []
+        9. map {}
+        10. js style regular expressions //
+
+    * syntax is a mix of json and scheme with some good trade-offs
+    * json? yes; any valid json expression is valid xyz map type
+    * null is null symbol
+    * boolean - true or false denoted by respective symbols; thus the boolean true and false are not #t #f as in scheme
+    * characters are c-like 'a','b' not #\a
+    * flonum is double -0.234e-23.455
+    * fixnum is long int 2342342424324234
+        - hex integer 0xf4
+        - binary integer 0b101010101
+        - octal integer 04567
+
+    * strings
+        - smart strings a.k.a strings with '\0' in them
+        - escape sequences
+        - hex string "\x03\xde\x34"
+        - double quote strings with newline " "
+        - python style triple quoted strings """ """
+        - unicode???
+
+    * define is (def ...)
+    * functions a.k.a lambda forms are (fn ...)
+    * begin is (do ...) kind of lambda
+    * index sexpr
+        - (index list-sexpr 9) returns 9th element of sexpr list
+        > of list-name or fallsback to the last element, no fiddling like
+        > (cadr (cadddr (caddddr list-name))) also adding support for -ve index
+        > which can fallback to the first element.
+        - support car and cdr, also first,rest, ff,fr,ffr,fff,etc.
+
+    * quote is ! not '
+    * quasi-quote is `
+    * unquote is ~ not ,
+    * unquote-splicing is ~@ not ,@
+
+    * vector is [] as in array type of json
+    * maps are hashtables as in {} object literal of json
+    * garbage collection
+    * namespaces using maps
+    * python style module system using maps; remote import method a.k.a import from internet
+    * serialized binary modules, which can be easily loaded
+
+    * async io/network api
+    * bytecode compiler and interpreter/vm
+    * write xyz in xyz and bootstrap

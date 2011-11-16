@@ -1,0 +1,57 @@
+___  ___ ___ __ ________
+\  \/  /<   |  |\___   /
+ >    <  \___  | /    /
+/__/\_ \ / ____|/_____ \
+      \/ \/           \/
+
+
+lexical grammar
+
+
+<program> ::= ( <tokens> | <delimiter> )*
+
+<tokens> ::= <keyword> | <identifier> | <literal> | <operator> | <other>
+
+<delimiter> ::= <whitespace> | <characterboundry> | <stringboundry> | <listboundry> | <vectorboundry> | <mapboundry>
+<whitespace> ::= TAB | VTAB | FF | SP | NBSP | USP | LF | CR | LS | PS
+<characterboundry> ::= {'}
+<stringboundry> ::= {"} | {"""}
+<listboundry> ::= {(} | {)}
+<vectorboundry> ::= {[} | {,} | {]}
+<mapboundry> ::= {{} | {:} | {,} | {}}
+
+<keyword> ::= def | if | fn | with | do | cond
+
+<symbol> ::= ( <letter> | _ | $ )( <letter> | _ | <digit> )*
+
+<literal> ::= <numericliteral> | <characterliteral> | <stringliteral>
+<numericliteral> ::= <fixnumliteral> | <flonumliteral>
+<fixnumliteral> ::= <decimalfixnum> | <hexfixnum> | <binaryfixnum> | <octalfixnum>
+<decimalfixnum> ::= <nonzerodigit> <digit>*
+<nonzerodigit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+<digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+<hexfixnum> ::= ( 0x|0X ) <hexdigit>*
+<hexdigit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | A | B | C | D | E | F | a | b | c | d | e | f
+<binaryfixnum> ::= ( 0b | 0B ) <bit>*
+<bit> ::= 0 | 1
+<octalfixnum> ::= 0 <octaldigit>*
+<octaldigit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+<flonumliteral> ::= ( <digit>* . <digit> <digit>* ( <exp> ))
+<exp> ::= ( E|e ) ( +|- ) <digit> <digit>*
+
+
+
+
+
+
+
+
+
+
+
+
+
+<null> ::= null | <numbernull> | <charnull> | <stringnull> | <sexprnull> | <vectornull> | <mapnull>
+
+
+<expr> ::= <null> | <boolean> | <number> | <character> | <string> | <symbol> | <sexpr> | <list> | <vector> | <map>

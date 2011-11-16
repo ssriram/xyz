@@ -60,7 +60,7 @@ mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units)
             mp2->prev=mp1;
             mp2->next=NULL;
             mp1->next=mp2;
-            mp1=mp2;  
+            mp1=mp2;
             //printf("unit: %d\n",units);
         }
     }
@@ -100,22 +100,22 @@ void init_cell_pool(mem_pool *mp, size_t s)
 {
     size_t total=0,i=0,s1;
     void *start=NULL;
-    void *end=NULL;    
+    void *end=NULL;
     if(mp && (mp->type == cell_pool) && s)
     {
         total=mp->size / (s + sizeof(void *));
         printf("total number of %d sized objects in %d sized pool is %d\n",s,mp->size,total);
-    
+
         start=mp->p;
         end=start+mp->size;
-        
+
         /*
-         *  <------------------><---------------------------------------------------->
-         *   list of pointers           list of obects
+         *  <----------------------><---------------------------------------------------->
+         *   list of free pointers           list of objects
          */
-        
+
         printf("start %x end %x objstart %x",(unsigned)start,(unsigned)end,(unsigned)(start+total));
-        
+
         for(i=0;i<total;i++)
         {
             *(start+i)=(start+i+total);
@@ -231,7 +231,7 @@ z *findobj(z *objs, char *name)
         sym=cdr(sym);
     idx++;
     }
-    
+
     //obj not found
     return obj_notok;
 }
@@ -266,7 +266,7 @@ else
     if main module present
         if obj present return obj
         else create obj
-    else throw error    
+    else throw error
 */
 
     char modname[30],objname[30];
@@ -275,7 +275,7 @@ else
     if(strchr(name,':')!=NULL)
     {
         splitmodobj(name,':',modname,objname);
-        
+
         if(modname)
         {
             //modname present
@@ -295,7 +295,7 @@ else
                     }
                     else
                     {
-                        fprintf(stderr,"error: undefined object\n");                        
+                        fprintf(stderr,"error: undefined object\n");
                         return obj_notok;
                     }
                 }
@@ -308,7 +308,7 @@ else
         {
             fprintf(stderr,"error: undefined module or object\n");
             obj= obj_notok;
-        }        
+        }
     }
     else
     {
@@ -335,7 +335,7 @@ else
                 }
             }
             tray=cdr(tray);
-        }        
+        }
         fprintf(stderr,"error: main module not found\n");
         return obj_notok;
     }
