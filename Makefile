@@ -1,8 +1,8 @@
 #   ___  ___ ___ __ ________
 #   \  \/  /<   |  |\___   /
-#    >    <  \___  | /    / 
+#    >    <  \___  | /    /
 #   /__/\_ \ / ____|/_____ \
-#         \/ \/           \/ 
+#         \/ \/           \/
 #
 #   - a simple hackable scripting language for simply hacking!
 #   - xyz is a small scheme like implemention born out of pure hobby hacking.
@@ -11,13 +11,13 @@
 
 all : xyz
 
-xyz : xyz.o
-	gcc xyz.o -o xyz
+xyz : z.o
+	gcc z.o -o z
 
-xyz.o : xyz.c
-	gcc -c xyz.c
+z.o : z.c
+	gcc -c z.c
 
 clean :
-	rm -rf xyz.o xyz
+	rm -rf z.o z xyz.o xyz
 
 

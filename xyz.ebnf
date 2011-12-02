@@ -10,9 +10,21 @@ lexical grammar
 
 <program> ::= ( <tokens> | <delimiter> )*
 
-<tokens> ::= <keyword> | <identifier> | <literal> | <operator> | <other>
+<tokens> ::=
+    <keyword> |
+    <symbol> |
+    <literal> |
+    <operator> |
+    <other>
 
-<delimiter> ::= <whitespace> | <characterboundry> | <stringboundry> | <listboundry> | <vectorboundry> | <mapboundry>
+<delimiter> ::=
+    <whitespace> |
+    <characterboundry> |
+    <stringboundry> |
+    <listboundry> |
+    <vectorboundry> |
+    <mapboundry>
+
 <whitespace> ::= TAB | VTAB | FF | SP | NBSP | USP | LF | CR | LS | PS
 <characterboundry> ::= {'}
 <stringboundry> ::= {"} | {"""}
@@ -22,11 +34,21 @@ lexical grammar
 
 <keyword> ::= def | if | fn | with | do | cond
 
-<symbol> ::= ( <letter> | _ | $ )( <letter> | _ | <digit> )*
+<symbol> ::= ( <letter> | _ | $ )( <letter> | _ | <digit> | . )*
 
-<literal> ::= <numericliteral> | <characterliteral> | <stringliteral>
+<literal> ::=
+    <numericliteral> |
+    <characterliteral> |
+    <stringliteral>
+
 <numericliteral> ::= <fixnumliteral> | <flonumliteral>
-<fixnumliteral> ::= <decimalfixnum> | <hexfixnum> | <binaryfixnum> | <octalfixnum>
+
+<fixnumliteral> ::=
+    <decimalfixnum> |
+    <hexfixnum> |
+    <binaryfixnum> |
+    <octalfixnum>
+
 <decimalfixnum> ::= <nonzerodigit> <digit>*
 <nonzerodigit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 <digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
@@ -39,9 +61,23 @@ lexical grammar
 <flonumliteral> ::= ( <digit>* . <digit> <digit>* ( <exp> ))
 <exp> ::= ( E|e ) ( +|- ) <digit> <digit>*
 
+<characterliteral> ::= '( <characters> | <escapeseq> )+'
 
+<characters> ::=
+    <letter> |
+    <digit> |
+    <specialchar> |
+    <punctuations> |
+    <other>
 
+<letter> ::=
+    a | b | c | d | e | f | g | h | i | j | k | l | m | n | o | p | q | r | s | t | u | v | w | x | y | z |
+    A | B | C | D | E | F | G | H | I | J | K | L | M | N | O | P | Q | R | S | T | U | V | W | X | Y | Z
 
+<specialchar> ::=
+<escapeseq> ::= \\ | \' | \" | \? | \a | \b | \f | \r | \t | \v | \0 | <hexescape> | <octalescape>
+<hexescape> ::= \( x|X ) <hexdigit> <hexdigit>*
+<octalescape> ::= \0 <octaldigit> <octaldigit>*
 
 
 
@@ -54,4 +90,16 @@ lexical grammar
 <null> ::= null | <numbernull> | <charnull> | <stringnull> | <sexprnull> | <vectornull> | <mapnull>
 
 
-<expr> ::= <null> | <boolean> | <number> | <character> | <string> | <symbol> | <sexpr> | <list> | <vector> | <map>
+<expr> ::=
+    <null> |
+    <boolean> |
+    <number> |
+    <character> |
+    <string> |
+    <symbol> |
+    <sexpr> |
+    <list> |
+    <vector> |
+    <map>
+
+
