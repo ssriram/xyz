@@ -26,7 +26,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef XYZH
 
-#define XYZH 1-03dec2011
+#define XYZH 1-23jan2012
+
 #define LINUX
 
 /*
@@ -157,9 +158,7 @@ struct z *obj_notok;
 struct z *obj_undefined;
 struct z *obj_eof;
 
-#define cell_pool_size 65536
-//#define cell_pool_size 1024
-#define cells_per_pool (unsigned int)(cell_pool_size / (sizeof(struct z)+sizeof(struct z*)))
+#define cell_pool_size 4096
 
 typedef enum mem_pool_type {cell_pool,bin_pool} mem_pool_type;
 
@@ -168,7 +167,8 @@ typedef struct mem_pool
     mem_pool_type type;
     size_t size;
     void *p;
-    struct z *freelist;
+    size_t freelist;
+    struct z **f;
     struct mem_pool *prev;
     struct mem_pool *next;
 } mem_pool;
@@ -180,12 +180,11 @@ void mem_pool_expand(mem_pool *mp,mem_pool_type type, size_t size, size_t units)
 void gc_init(mem_pool *mp);
 void gc_gc(mem_pool *mp);
 void gc_shutdown(mem_pool *mp);
+void gc_push_root(mem_pool *mp, struct z *obj);
+struct z *gc_pop_root(mem_pool *mp, struct z *obj);
 
-void push_root(struct z *obj);
-struct z *pop_root(struct z *obj);
-
-struct z *make_obj();
-void break_obj(struct z *o);
+struct z *make_obj(mem_pool *mp);
+void break_obj(mem_pool *mp, struct z *o);
 
 struct z *make_char(int v);
 struct z *make_fixnum(long int v);

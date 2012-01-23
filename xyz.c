@@ -26,131 +26,75 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef XYZC
 
-#define XYZC 1-03dec2011
+#define XYZC 1-23jan2012
 
 /*
 */
 
 #include "xyz.h"
 
+void init_cell_pool(mem_pool *mp)
+{
+    void *p;
+    int i;
+    p=malloc(sizeof(struct z*)*cell_pool_size);
+    if(!p){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
+
+    struct z **zpp=(struct z**)p;
+    struct z *zp=(struct z *)mp->p;
+
+    for(i=0;i<cell_pool_size;i++)
+    {
+        zpp[i]=&zp[i];
+    }
+    mp->f=zpp;
+}
+
 mem_pool *make_mem_pool(mem_pool_type type, size_t size, size_t units)
 {
-    if(type==cell_pool)
-    {
-        size=cell_pool_size;
-    }
-
-    mem_pool *mp=NULL,*mp1=NULL,*mp2=NULL;
+    mem_pool *mp=NULL;
     void *vp;
+    int i;
+
     if(units && size)
     {
-        //printf("size %d \nunits %d\n",size,units);
-        mp=malloc(sizeof(mem_pool));
+        mp=(struct mem_pool *)malloc(sizeof(mem_pool)*units);
         if(!mp){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
-        vp=calloc(1,size);
-        if(!vp){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
-        mp->type=type;
-        mp->size=size;
-        mp->p=vp;
-        mp->prev=NULL;
-        mp->next=NULL;
-        mp1=mp;
-        //printf("unit: %d@ %p\n",units,vp);
 
-        if(type==cell_pool)
+        for(i=0;i<units;i++,mp++)
         {
-
-            /*
-            *  <----------------------><---------------------------------------------------->
-            *   list of free pointers           list of objects
-            */
-
-            if(mp)
+            if(i==0)
             {
-                int psize=sizeof(struct z*);
-                int osize=sizeof(struct z);
-                int objs=(cell_pool_size/(psize+osize));
-                int i=0;
-
-                void *base=(void *)mp->p;
-                struct z **lstart=(struct z**)base;
-                struct z **lend=lstart+objs-1;
-                struct z *ostart=(struct z*)((void *)lend+5);
-                struct z *oend=ostart+objs-1;
-
-                mp->freelist=*lend;
-
-/*                 printf("size of pointer %d\nsize of object %d\n",psize,osize);
- *                 printf("objs %d\ntotal memory %d\n",objs,cell_pool_size);
- *                 printf("memory start %p\nmemory end %p\n",mp->p,(mp->p+cell_pool_size));
- *                 printf("list start %p\nlist end %p\n",lstart,lend);
- *                 printf("object start %p\nobject end %p\n",ostart,oend);
- */
-
-                for(i=0;i<objs;i++)
-                {
-                    *lstart=ostart;
-                    lstart++;
-                    ostart++;
-                }
-
+                mp->prev=NULL;
+                mp->next=&mp[i+1];
             }
-        }
-
-        for(units--;units>0;units--)
-        {
-            mp2=malloc(sizeof(mem_pool));
-            if(!mp2){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
-            vp=calloc(1,size);
-            if(!vp){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
-            mp2->type=type;
-            mp2->size=size;
-            mp2->p=vp;
-            mp2->prev=mp1;
-            mp2->next=NULL;
-            mp1->next=mp2;
-            mp1=mp2;
-            //printf("unit: %d@ %p\n",units,vp);
+            else if(i==(units-1))
+            {
+                mp->prev=&mp[i-1];
+                mp->next=NULL;
+            }
+            else
+            {
+                mp->next=&mp[i+1];
+                mp->prev=&mp[i-1];
+            }
 
             if(type==cell_pool)
             {
-
-                /*
-                *  <----------------------><---------------------------------------------------->
-                *   list of free pointers           list of objects
-                */
-
-                if(mp)
-                {
-                    int psize=sizeof(struct z*);
-                    int osize=sizeof(struct z);
-                    int objs=(cell_pool_size/(psize+osize));
-                    int i=0;
-
-                    void *base=(void *)mp->p;
-                    struct z **lstart=(struct z**)base;
-                    struct z **lend=lstart+objs-1;
-                    struct z *ostart=(struct z*)((void *)lend+5);
-                    struct z *oend=ostart+objs-1;
-
-                    mp->freelist=*lend;
-
-/*                     printf("size of pointer %d\nsize of object %d\n",psize,osize);
- *                     printf("objs %d\ntotal memory %d\n",objs,cell_pool_size);
- *                     printf("memory start %p\nmemory end %p\n",mp->p,(mp->p+cell_pool_size));
- *                     printf("list start %p\nlist end %p\n",lstart,lend);
- *                     printf("object start %p\nobject end %p\n",ostart,oend);
- */
-
-                    for(i=0;i<objs;i++)
-                    {
-                        *lstart=ostart;
-                        lstart++;
-                        ostart++;
-                    }
-                }
+                vp=malloc(sizeof(struct z)*cell_pool_size);
+                if(!vp){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
+                mp->p=vp;
+                mp->size=cell_pool_size;
+                init_cell_pool(mp);
             }
-
+            else
+            {
+                vp=malloc(size);
+                if(!vp){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
+                mp->p=vp;
+                mp->size=size;
+            }
+            mp->type=type;
         }
     }
     return mp;
@@ -168,6 +112,11 @@ int break_mem_pool(mem_pool *mp)
         };
         while(mp1->prev)
         {
+            if(mp1->type==cell_pool)
+            {
+                free((void *)mp1->f);
+            }
+
             mp2=mp1->prev;
             free(mp1->p);
             //printf("freed memory@ %p\n",mp1->p);
@@ -175,6 +124,12 @@ int break_mem_pool(mem_pool *mp)
             //printf("freed unit@ %p\n",mp1);
             mp1=mp2;
         };
+
+        if(mp1->type==cell_pool)
+        {
+            free((void *)mp1->f);
+        }
+
         free(mp1->p);
         //printf("freed memory@ %p\n",mp1->p);
         free(mp1);
@@ -194,16 +149,31 @@ void mem_pool_expand(mem_pool *mp,mem_pool_type type, size_t size, size_t units)
     m->prev=p;
 }
 
-/*void gc_init(mem_pool *mp);
-void gc_gc(mem_pool *mp);
+void gc_init(mem_pool *mp)
+{
+}
+void gc_gc(mem_pool *mp)
+{
+    printf("gc_gc called\n");
+}
+
+/*
 void gc_shutdown(mem_pool *mp);
+void gc_push_root(mem_pool *mp, struct z *obj);
+struct z *gc_pop_root(mem_pool *mp, struct z *obj);
+*/
 
-void push_root(struct z *obj);
-struct z *pop_root(struct z *obj);
+struct z *make_obj(mem_pool *mp)
+{
+    struct z *p = NULL;
+    struct mem_pool *mp1=mp;
 
-struct z *make_obj();
-void break_obj(struct z *o);
+    return p;
+}
 
+//void break_obj(mem_pool *mp, struct z *o);
+
+/*
 struct z *make_char(int v);
 struct z *make_fixnum(long int v);
 struct z *make_flonum(double v);
@@ -219,17 +189,18 @@ struct z *make_fn(struct z *scope, struct z *body);
 struct z *make_nfn(z *(*pnfn)(struct z *scope));
 */
 
-z *make_obj()
-{
-    z *p;
-    p=calloc(1,sizeof(struct z));
-    if(!p){fprintf(stderr,"problem: insufficient memory\n");exit(1);}
-    return p;
-}
+
 
 int main()
 {
-    mem_pool *m=make_mem_pool(cell_pool,cell_pool_size,15);
+    mem_pool *m=make_mem_pool(cell_pool,cell_pool_size,2);
+    int i;
+    z *p;
+    for(i=1;i<=4098;i++)
+    {
+        p=make_obj(m);
+        //if(i==1 || i>4093) printf("obj %d at %p\n",i,p);
+    }
     return break_mem_pool(m);
 }
 
