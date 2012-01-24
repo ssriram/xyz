@@ -4,7 +4,7 @@ ___  ___ ___ __ ________
 /__/\_ \ / ____|/_____ \
       \/ \/           \/
 
-XYZ
+xyz
 ---
 
 - A simple hackable scripting language for simply hacking!
@@ -56,7 +56,7 @@ some of their good features can into xyz.
         10. js style regular expressions //
 
     * syntax is a mix of json and scheme with some good trade-offs
-    * json? yes; any valid json expression is valid xyz map type
+    * json? yes; any valid json expression is valid xyz map type and hence trade off on some lisp/scheme syntax
     * null is null symbol
     * boolean - true or false denoted by respective symbols; thus the boolean true and false are not #t #f as in scheme
     * characters are c-like 'a','b' not #\a
@@ -84,10 +84,10 @@ some of their good features can into xyz.
         > which can fallback to the first element.
         - support car and cdr, also first,rest, ff,fr,ffr,fff,etc.
 
-    * quote is ! not '
-    * quasi-quote is `
+    * quote is ! not \'
+    * quasi-quote is \`
     * unquote is ~ not ,
-    * unquote-splicing is ~@ not ,@
+    * unquote-splicing is ~@ not ,@ as , is used inside json
 
     * vector is [] as in array type of json
     * maps are hashtables as in {} object literal of json

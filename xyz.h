@@ -26,7 +26,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef XYZH
 
-#define XYZH 1-23jan2012
+#define XYZH
 
 #define LINUX
 

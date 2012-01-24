@@ -26,7 +26,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef XYZC
 
-#define XYZC 1-23jan2012
+#define XYZC
 
 /*
 */
