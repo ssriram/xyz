@@ -77,8 +77,8 @@ typedef enum types
     tfalse = (tsubtype + tbool + tsubtype),
     tfixnum = (tsubtype + tnum),
     tflonum = (tsubtype + tnum + tsubtype),
-    tstring2 = (tsubtype + tstring),
-    tstring3 = (tsubtype + tstring + tsubtype),
+    tnstring = (tsubtype + tstring),
+    trstring = (tsubtype + tstring + tsubtype),
 
     gcmask = 0x00ffffff,
     gcprotect = 1<<30,
@@ -140,7 +140,15 @@ inline int typeget(z *obj)
 }
 inline void typeset(z *obj, int type)
 {
-    obj->flags=((obj->flags)&0xffff0000)|type;
+//    printf("%x %x\n",obj->flags,type);
+    obj->flags=obj->flags|type;
+//    printf("%x\n",obj->flags);
+}
+inline void typeinit(z *obj, int type)
+{
+//    printf("%x %x\n",obj->flags, type);
+    obj->flags=(0x00000000)|type;
+//    printf("%x\n",obj->flags);
 }
 inline int istype(z *obj, int type)
 {
@@ -158,7 +166,7 @@ struct z *obj_notok;
 struct z *obj_undefined;
 struct z *obj_eof;
 
-#define cell_pool_size 4096
+#define cell_pool_size 1024
 
 typedef enum mem_pool_type {cell_pool,bin_pool} mem_pool_type;
 
@@ -166,9 +174,8 @@ typedef struct mem_pool
 {
     mem_pool_type type;
     size_t size;
+    size_t used;
     void *p;
-    size_t freelist;
-    struct z **f;
     struct mem_pool *prev;
     struct mem_pool *next;
 } mem_pool;
@@ -186,19 +193,21 @@ struct z *gc_pop_root(mem_pool *mp, struct z *obj);
 struct z *make_obj(mem_pool *mp);
 void break_obj(mem_pool *mp, struct z *o);
 
-struct z *make_char(int v);
-struct z *make_fixnum(long int v);
-struct z *make_flonum(double v);
-struct z *make_string(void *v, size_t s);
-struct z *make_symbol(void *v, size_t s);
-struct z *make_regex(void *v, size_t s);
-struct z *make_list(struct z *pcar, struct z *pcdr);
-struct z *make_vector(size_t s);
-struct z *make_hashmap(size_t s);
-struct z *make_iport(FILE *in);
-struct z *make_oport(FILE *out);
-struct z *make_fn(struct z *scope, struct z *body);
-struct z *make_nfn(z *(*pnfn)(struct z *scope));
+struct z *make_char(mem_pool *mp, int v);
+struct z *make_fixnum(mem_pool *mp, long int v);
+struct z *make_flonum(mem_pool *mp, double v);
+struct z *make_string(mem_pool *mp, void *v, size_t s);
+struct z *make_string1(mem_pool *mp, char *s);
+struct z *make_rstring(mem_pool *mp, char *s);
+struct z *make_symbol(mem_pool *mp, void *v, size_t s);
+struct z *make_regex(mem_pool *mp, void *v, size_t s);
+struct z *make_list(mem_pool *mp, struct z *pcar, struct z *pcdr);
+struct z *make_vector(mem_pool *mp, size_t s);
+struct z *make_hashmap(mem_pool *mp, size_t s);
+struct z *make_iport(mem_pool *mp, FILE *in);
+struct z *make_oport(mem_pool *mp, FILE *out);
+struct z *make_fn(mem_pool *mp, struct z *scope, struct z *body);
+struct z *make_nfn(mem_pool *mp, z *(*pnfn)(struct z *scope));
 
 
 struct z *bit_oper(struct z *obj,int oper);
