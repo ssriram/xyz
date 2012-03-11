@@ -68,8 +68,8 @@ typedef enum types
     tiport, toport,
     tlist, tvector, tmap, tlink,
     tfn, tnfn,
-    tenv, tpromise, tcontinuation,
-    tmacro, texcep,
+    tenv, tclosure, tcontinuation,
+    tmacro, tpromise,
     tblob,
 
     tsubtype = 1<<8,
@@ -81,9 +81,10 @@ typedef enum types
     trstring = (tsubtype + tstring + tsubtype),
 
     gcmask = 0x00ffffff,
-    gcprotect = 1<<30,
-    gcmark = 1<<31,
-    gcclear = 0xffffffff >> 1,
+    gcused1 = 1<<31,
+    gcused2 = 1<<30,
+    gcused3 = gcused1 | gcused2,
+    gcclear = 0xffffffff >> 2,
 } types;
 
 struct z;
@@ -155,7 +156,6 @@ inline int istype(z *obj, int type)
     return ((obj->flags&0x0000ffff)==type)?1:0;
 }
 
-
 /*hard objects*/
 
 struct z *obj_null;
@@ -165,6 +165,8 @@ struct z *obj_ok;
 struct z *obj_notok;
 struct z *obj_undefined;
 struct z *obj_eof;
+
+/*memory stuff*/
 
 #define cell_pool_size 1024
 
@@ -193,6 +195,8 @@ struct z *gc_pop_root(mem_pool *mp, struct z *obj);
 struct z *make_obj(mem_pool *mp);
 void break_obj(mem_pool *mp, struct z *o);
 
+/*constructors*/
+
 struct z *make_char(mem_pool *mp, int v);
 struct z *make_fixnum(mem_pool *mp, long int v);
 struct z *make_flonum(mem_pool *mp, double v);
@@ -209,6 +213,7 @@ struct z *make_oport(mem_pool *mp, FILE *out);
 struct z *make_fn(mem_pool *mp, struct z *scope, struct z *body);
 struct z *make_nfn(mem_pool *mp, z *(*pnfn)(struct z *scope));
 
+/*operations*/
 
 struct z *bit_oper(struct z *obj,int oper);
 struct z *bit_oper2(struct z *obj,struct z *obj2,int oper);
@@ -240,6 +245,10 @@ inline struct z *cdr(struct z *o)
     return NULL;
 }
 
+/*scheme standards*/
+
+#define first(obj) car(obj)
+#define rest(obj) cdr(obj)
 #define caar(obj) car(car(obj))
 #define ff(obj) car(car(obj))
 #define cadr(obj) car(cdr(obj))
@@ -354,7 +363,6 @@ struct z *vector_back(struct z *v);
 struct z *vector_pushback(struct z *v, struct z *obj);
 struct z *vector_popback(struct z *v);
 
-
 void hashtable_resolve(struct z *ht);
 size_t hashtable_hash(struct z *str);
 size_t hashtable_hash2(void *key);
@@ -378,5 +386,100 @@ struct z *hashtable_find(struct z *ht, struct z *key);
 struct z *hashtable_at(struct z *ht, size_t pos);
 struct z *hashtable_count(struct z *ht, struct z *key);
 size_t hashtable_count2(struct z *ht, struct z *key);
+
+
+/*interpreter stuff*/
+
+struct mem_pool *mainpool;
+static struct z *tray[cell_pool_size];
+
+struct z *args;
+struct z *env;
+struct z *code;
+struct z *dump;
+
+struct z *symbols;
+struct z *globals;
+
+struct z *obj_fn;
+struct z *obj_quote;
+struct z *obj_qquote;
+struct z *obj_unquote;
+struct z *obj_unquotesp;
+
+FILE *ifp,*ofp,*efp;
+
+static int silent = 0;
+
+typedef enum tokens
+{
+    tok_atom=0,tok_num,tok_sym,tok_regex,
+    tok_lparen,tok_rparen,tok_lbrace,tok_rbrace,tok_lsquare,tok_rsquare,
+    tok_backtick,tok_tilde,tok_excl,tok_at,tok_hash,tok_dollar,
+    tok_quote,tok_dquote,tok_collon,tok_scollon,tok_dot,tok_comma
+
+} tokens;
+
+#define LINESIZE 1024
+
+typedef enum ops
+{
+    op_load=0,op_top0,op_top1,
+    op_read,op_print,op_eval,op_eval0,op_eval1,
+    op_apply,op_macro,
+
+    op_fn,op_quote,op_def0,op_def1,
+    op_do,op_if0,op_if1,
+    op_set0,op_set1,op_let0,op_let1,op_let2,
+    op_lets0,op_lets1,op_lets2,op_letr0,op_letr1,op_letr2,
+
+    op_cond0,op_cond1,op_delay,
+    op_and0,op_and1,op_or0,op_or1,
+    op_cons0,op_cons1,op_macro0,op_macro1,
+    op_case0,op_case1,op_case2,
+
+    op_evalp,op_applyp,
+    op_cont,
+    op_add,op_sub,op_mul,op_div,op_mod,
+    op_car,op_cdr,op_cons,
+    op_setcar,op_setcdr,
+    op_not,
+    op_bool,op_null,
+    op_zero,op_pos,op_neg,
+    op_ne,op_lt,op_gt,op_le,op_ge,
+    op_sym,op_num,op_str,
+    op_fnp,op_pair,
+    op_eq,op_eqv,
+    op_force,op_write,op_disp,op_nl,
+    op_err0,op_err1,
+    op_reverse,op_append,
+    op_put,op_get,
+    op_quit,
+    op_gc,op_gcverb,op_newseg,
+
+    op_rsexpr,op_rlist,op_rdot,
+    op_rquote,op_rdquote,op_runquote,op_uqsplice,
+
+    op_plist0,op_plist1,
+
+    op_lenlist,op_assq,
+    op_pwidth,op_pwidth0,op_pwidth1,
+    op_closure,op_closurep,op_macrop
+
+} ops;
+
+
+static FILE *tmpfp;
+static int tok;
+static int printflag;
+static int optr;
+
+
+#define __begin     do {
+#define __end       } while(0)
+
+
+
+
 
 #endif
