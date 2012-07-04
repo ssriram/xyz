@@ -81,9 +81,9 @@ typedef enum types
     trstring = (tsubtype + tstring + tsubtype),
 
     gcmask = 0x00ffffff,
-    gcused1 = 1<<31,
-    gcused2 = 1<<30,
-    gcused3 = gcused1 | gcused2,
+    gcused = 1<<31,
+    gcmarked = 1<<30,
+    gcflag = gcused | gcmarked,
     gcclear = 0xffffffff >> 2,
 } types;
 
@@ -114,7 +114,7 @@ typedef struct z
         } vector;
         struct
         {
-            struct z *p;
+            struct z **p;
             size_t l;
         } map;
         struct
@@ -141,15 +141,15 @@ inline int typeget(z *obj)
 }
 inline void typeset(z *obj, int type)
 {
-//    printf("%x %x\n",obj->flags,type);
+    //printf("%x %x\n",obj->flags,type);
     obj->flags=obj->flags|type;
-//    printf("%x\n",obj->flags);
+    //printf("%x\n",obj->flags);
 }
 inline void typeinit(z *obj, int type)
 {
-//    printf("%x %x\n",obj->flags, type);
+    //printf("%x %x\n",obj->flags, type);
     obj->flags=(0x00000000)|type;
-//    printf("%x\n",obj->flags);
+    //printf("%x\n",obj->flags);
 }
 inline int istype(z *obj, int type)
 {
@@ -306,6 +306,9 @@ inline struct z *cdr(struct z *o)
 #define cddddr(obj) cdr(cdr(cdr(cdr(obj))))
 #define rrrr(obj) cdr(cdr(cdr(cdr(obj))))
 
+
+/*list vector map methods*/
+
 struct z *list_front(struct z *l);
 struct z *list_back(struct z *l);
 struct z *list_at(struct z *l, struct z *obj);
@@ -363,29 +366,33 @@ struct z *vector_back(struct z *v);
 struct z *vector_pushback(struct z *v, struct z *obj);
 struct z *vector_popback(struct z *v);
 
-void hashtable_resolve(struct z *ht);
-size_t hashtable_hash(struct z *str);
-size_t hashtable_hash2(void *key);
-void hashtable_dump(struct z *ht, FILE *out);
 
-struct z *hashtable_size(struct z *ht);
-size_t hashtable_size2(struct z *ht);
-struct z *hashtable_maxsize(struct z *ht);
-size_t hashtable_maxsize2(struct z *ht);
-struct z *hashtable_isempty(struct z *ht);
-int hashtable_isempty2(struct z *ht);
+#define default_hashsize    8
 
-void hashtable_insert(struct z *ht, struct z *key, struct z *val);
-void hashtable_insert2(struct z *ht, struct z *list);
-void hashtable_erase(struct z *ht, struct z *key);
-void hashtable_erase2(struct z *ht, size_t pos);
-void hashtable_swap(struct z *ht1, struct z *ht2);
+void hashmap_resolve(struct z *hm, char *key, struct z *val);
+size_t hashmap_hash(struct z *str);
+size_t hashmap_hash1(char *str, size_t hsize);
+size_t hashmap_hash2(void *key);
+void hashmap_dump(struct z *ht, FILE *out);
 
-void hashtable_clear(struct z *ht);
-struct z *hashtable_find(struct z *ht, struct z *key);
-struct z *hashtable_at(struct z *ht, size_t pos);
-struct z *hashtable_count(struct z *ht, struct z *key);
-size_t hashtable_count2(struct z *ht, struct z *key);
+struct z *hashmap_size(struct z *ht);
+size_t hashmap_size1(struct z *ht);
+struct z *hashmap_maxsize(struct z *ht);
+size_t hashmap_maxsize2(struct z *ht);
+struct z *hashmap_isempty(struct z *ht);
+int hashmap_isempty2(struct z *ht);
+
+void hashmap_insert(struct z *ht, struct z *key, struct z *val);
+void hashmap_insert2(struct z *ht, struct z *list);
+void hashmap_erase(struct z *ht, struct z *key);
+void hashmap_erase2(struct z *ht, size_t pos);
+void hashmap_swap(struct z *ht1, struct z *ht2);
+
+void hashmap_clear(struct z *ht);
+struct z *hashmap_find(struct z *ht, struct z *key);
+struct z *hashmap_at(struct z *ht, size_t pos);
+struct z *hashmap_count(struct z *ht, struct z *key);
+size_t hashmap_count2(struct z *ht, struct z *key);
 
 
 /*interpreter stuff*/
@@ -393,21 +400,29 @@ size_t hashtable_count2(struct z *ht, struct z *key);
 struct mem_pool *mainpool;
 static struct z *tray[cell_pool_size];
 
-struct z *args;
-struct z *env;
-struct z *code;
-struct z *dump;
-
 struct z *symbols;
 struct z *globals;
 
-struct z *obj_fn;
-struct z *obj_quote;
-struct z *obj_qquote;
-struct z *obj_unquote;
-struct z *obj_unquotesp;
 
-FILE *ifp,*ofp,*efp;
+/*builtin hard objects*/
+
+struct z *obj_def;
+struct z *obj_undef;
+struct z *obj_set;
+struct z *obj_get;
+struct z *obj_cond;
+struct z *obj_else;
+struct z *obj_if;
+struct z *obj_fn;
+struct z *obj_do;
+struct z *obj_with;
+struct z *obj_and;
+struct z *obj_or;
+struct z *obj_not;
+struct z *obj_quote;
+struct z *obj_quasiquote;
+struct z *obj_unquote;
+struct z *obj_unquotesplice;
 
 static int silent = 0;
 
@@ -421,65 +436,5 @@ typedef enum tokens
 } tokens;
 
 #define LINESIZE 1024
-
-typedef enum ops
-{
-    op_load=0,op_top0,op_top1,
-    op_read,op_print,op_eval,op_eval0,op_eval1,
-    op_apply,op_macro,
-
-    op_fn,op_quote,op_def0,op_def1,
-    op_do,op_if0,op_if1,
-    op_set0,op_set1,op_let0,op_let1,op_let2,
-    op_lets0,op_lets1,op_lets2,op_letr0,op_letr1,op_letr2,
-
-    op_cond0,op_cond1,op_delay,
-    op_and0,op_and1,op_or0,op_or1,
-    op_cons0,op_cons1,op_macro0,op_macro1,
-    op_case0,op_case1,op_case2,
-
-    op_evalp,op_applyp,
-    op_cont,
-    op_add,op_sub,op_mul,op_div,op_mod,
-    op_car,op_cdr,op_cons,
-    op_setcar,op_setcdr,
-    op_not,
-    op_bool,op_null,
-    op_zero,op_pos,op_neg,
-    op_ne,op_lt,op_gt,op_le,op_ge,
-    op_sym,op_num,op_str,
-    op_fnp,op_pair,
-    op_eq,op_eqv,
-    op_force,op_write,op_disp,op_nl,
-    op_err0,op_err1,
-    op_reverse,op_append,
-    op_put,op_get,
-    op_quit,
-    op_gc,op_gcverb,op_newseg,
-
-    op_rsexpr,op_rlist,op_rdot,
-    op_rquote,op_rdquote,op_runquote,op_uqsplice,
-
-    op_plist0,op_plist1,
-
-    op_lenlist,op_assq,
-    op_pwidth,op_pwidth0,op_pwidth1,
-    op_closure,op_closurep,op_macrop
-
-} ops;
-
-
-static FILE *tmpfp;
-static int tok;
-static int printflag;
-static int optr;
-
-
-#define __begin     do {
-#define __end       } while(0)
-
-
-
-
 
 #endif
