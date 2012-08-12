@@ -189,8 +189,18 @@ struct z *make_vector(mem_pool *mp, size_t s)
     return p;
 }
 
+struct z *make_hashmap(mem_pool *mp, size_t s)
+{
+    struct z *p = obj_make(mp);
+    p->type=thashmap;
+    p->flags=gc_used;
+    
+    p->val.m = new map<string,struct z*>;
+    
+    return p;    
+}
+
 /*
-struct z *make_hashmap(mem_pool *mp, size_t s);
 struct z *make_iport(mem_pool *mp, FILE *in);
 struct z *make_oport(mem_pool *mp, FILE *out);
 struct z *make_fn(mem_pool *mp, struct z *scope, struct z *body);
@@ -250,7 +260,7 @@ void hashmap_clear(struct z *h);
 
 int is_delim(int ch)
 {
-    return isspace(ch) || ch==0 || 
+    return isspace(ch) || ch==0 || ch==',' ||
             ch=='(' || ch==')' ||
             ch=='[' || ch==']' || 
             ch=='{' || ch=='}' ||              
@@ -348,7 +358,7 @@ struct z *read_list(FILE *in)
     {
         read_skipws(in);
         ch=read_next_char(in);
-        if(!is_term_delim(ch))
+        if(is_term_delim(ch))
         {
             fprintf(stderr,"error: incorrect pair syntax\n");
             return obj_notok;
@@ -386,13 +396,14 @@ struct z *read_vector(FILE *in)
     read_skipws(in);
     ch=getc(in);
 
+    vec=make_vector(global_mem_pool, 4);
+
     /*got empty vector*/
     if(ch==']')
     {
-        return obj_null;
+        return vec;
     }
 
-    vec=make_vector(global_mem_pool, 4); 
     ungetc(ch,in);
     
     read_skipws(in);
@@ -400,21 +411,112 @@ struct z *read_vector(FILE *in)
             
     while(ch != ']')
     {
-        read_skipws(in);
-        ch=getc(in); 
-
-        if(ch==']') break;
         ungetc(ch,in);
         
         pelem=read(in);
         vec->val.v->push_back(pelem);
+        
+        read_skipws(in);
+        ch=getc(in);
+        
+        if(ch==']') break;        
     }
     
     return vec;
 }
 
 
-struct z *read_hashmap(FILE *in);
+struct z *read_hashmap(FILE *in)
+{
+    int ch,quote;
+    struct z *map;
+    struct z *value;
+    string key="";
+
+    read_skipws(in);
+    ch=getc(in);
+
+    map=make_hashmap(global_mem_pool, 4);
+    
+    if(ch=='}')
+    {
+        return map;
+    }
+    ungetc(ch,in);    
+    
+    read_skipws(in);
+    ch=getc(in);
+    
+    while(ch != '}')
+    {
+        ungetc(ch,in);
+    
+        read_skipws(in);
+        ch=getc(in);
+        
+        if(ch=='"' || ch=='\'')
+        {
+            quote=ch;
+
+            while((ch=getc(in))!=quote)
+            {
+	            if(ch==0)
+	            {
+		            fprintf(stderr,"error: improper hashmap key\n");
+		            return obj_notok;
+	            }
+	            else
+	            {
+		            key.append(1,(char)ch);
+	            }
+            }
+            
+            read_skipws(in);
+            ch=getc(in);
+    
+             /*pairing*/
+            if(ch==':')
+            {
+                read_skipws(in);
+                ch=read_next_char(in);
+                if(is_term_delim(ch))
+                {
+                    fprintf(stderr,"error: incorrect hashmap syntax\n");
+                    return obj_notok;
+                }
+                
+                /*get the cdr*/
+                value=read(in);
+                
+                map->val.m->insert( std::pair<string,struct z*>(key,value) );
+                  
+                read_skipws(in);
+                ch=getc(in);
+        
+                if(ch=='}')
+                {
+                    break;
+                }
+                else
+                {
+                    key="";
+                    continue;
+                }
+            }
+            else
+            {
+                fprintf(stderr,"error: incorrect hashmap syntax\n");
+                return obj_notok;
+            }
+        }
+        else
+        {
+            fprintf(stderr,"error: incorrect hashmap syntax\n");
+            return obj_notok;
+        }
+    }   
+    return map;
+}
 
 struct z *read(FILE *in)
 {
@@ -509,13 +611,13 @@ struct z *read(FILE *in)
                     int num=0;
                     if(hex)
                     {
-                        sscanf(numbuff.c_str(),"%x",&hnum);
-                        inum=(long int) hnum;
+                        sscanf(numbuff.c_str(),"%x",&num);
+                        inum=(long int) num;
                     }
                     else
                     {
-                        sscanf(numbuff.c_str(),"%d",&num);
-                        inum=(long int) num;
+                        sscanf(numbuff.c_str(),"%ld",&inum);
+                        inum=(long int) inum;
                     }
                     return make_fixnum(global_mem_pool,inum);
                     break;
@@ -605,7 +707,7 @@ struct z *read(FILE *in)
 					    }
 					    ungetc(ch,in);
 					    sscanf(numbuff.c_str(),"%x",&inum);
-					    str.append(1,inum);
+					    str.append(1,char(inum));
 					    continue;
 				    }
 				    default:
@@ -625,6 +727,21 @@ struct z *read(FILE *in)
 	    }
 	    return make_string3(global_mem_pool,str);
     }
+    
+    else if(ch=='(')
+    {
+        return read_list(in);
+    }
+    
+    else if(ch=='[')
+    {
+        return read_vector(in);
+    }
+    
+    else if(ch=='{')
+    {
+        return read_hashmap(in);
+    }
 }
 
 
@@ -635,25 +752,11 @@ struct z *eval(struct z *exp, struct z *scope)
 }
 
 
-/*
-enum z_type
-{
-    tnull = 1,
-    tbool, tchar, 
-    tfixnum, tflonum,
-    tstring, tsymbol, tregex,
-    tlist, tvector, thashmap,
-    tiport, toport,
-    tfn, tnfn,
-    tblob
-};
-*/
-
 void print(FILE *out, struct z *exp)
 {
     if(exp==obj_null)
     {
-        fprintf(out,"null");
+        fprintf(out,"()");
     }
     else if(exp==obj_true)
     {
@@ -672,7 +775,7 @@ void print(FILE *out, struct z *exp)
                 fprintf(out,"char");
                 break;
             case tfixnum:
-                fprintf(out,"%li",exp->val.fixnum);
+                fprintf(out,"%ld",exp->val.fixnum);
                 break;
             case tflonum:
                 fprintf(out,"%lf",exp->val.flonum);
@@ -680,6 +783,21 @@ void print(FILE *out, struct z *exp)
             case tstring:
                 fprintf(out,"\'%s\'",exp->val.s->c_str());
                 break;
+            case tlist:
+                fprintf(out,"(");
+                print_list(out,exp);
+                fprintf(out,")");
+                break;
+            case tvector:
+                fprintf(out,"[");
+                print_vector(out,exp);
+                fprintf(out,"]");
+                break;
+            case thashmap:
+                fprintf(out,"{ ");
+                print_hashmap(out,exp);
+                fprintf(out," }");
+                break;                
             default:
                 fprintf(stderr,"error: invalid data type\n");
                 break;
@@ -687,9 +805,75 @@ void print(FILE *out, struct z *exp)
     }
 }
 
-void print_list(FILE *out, struct z *exp);
-void print_vector(FILE *out, struct z *exp);
-void print_hashmap(FILE *out, struct z *exp);
+void print_list(FILE *out, struct z *exp)
+{
+    struct z *car = list_car(exp);
+    struct z *cdr = list_cdr(exp);
+    
+    print(out,car);
+    
+    if(type_get(cdr) == tlist)
+    {
+        fprintf(out," ");
+        print_list(out,cdr);
+    }
+    
+    else if(cdr == obj_null)
+        return;
+    
+    else
+    {
+        fprintf(out," : ");
+        print(out,cdr);
+    }
+}
+
+void print_vector(FILE *out, struct z *exp)
+{
+    struct z *elem;
+    vector<struct z*> *vec;
+    vector<struct z*>::iterator i;
+
+    vec=exp->val.v;
+    
+    for(i = vec->begin(); i < vec->end(); ++i)
+    {
+        elem=*i;
+        
+        print(out,elem);
+        
+        if(i < vec->end()-1)
+        {
+            fprintf(out,", ");
+        }
+    }    
+}
+
+void print_hashmap(FILE *out, struct z *exp)
+{
+    string key;
+    struct z *value;
+    map<string,struct z*> *hm;
+    map<string,struct z*>::iterator i;
+    size_t j;
+
+    hm=exp->val.m;
+    
+    for(i = hm->begin(),j=0; i != hm->end(); ++i,++j)
+    {
+        key=(*i).first;
+        value=(*i).second;
+        
+        fprintf(out,"\"%s\"",key.c_str());
+        fprintf(out," : ");
+        print(out,value);
+        
+        if(j < hm->size()-1)
+        {
+            fprintf(out,", ");
+        }
+    }
+}
 
 
 void repl(FILE *in, FILE *out, struct z *scope)
@@ -709,6 +893,9 @@ int main(int agrc, char *agrv[])
     struct z *scope;
     
     global_mem_pool=make_mem_pool(1);
+    
+    obj_null = new z();
+    obj_notok = new z();
     
     repl(stdin,stdout,scope);
     
