@@ -313,14 +313,13 @@ void read_skipws(FILE *in)
         /*skip comma*/
         else if (ch==','){continue;}
         /*skip multiline comments*/
-        else if(ch=='#' && (read_next_char(in)=='#'))
+        else if(ch=='#' && (read_next_char(in)==':'))
         {
-            ch=getc(in);
-            while((ch=getc(in)) !=0 && (ch!='#' && read_next_char(in)!='#')){}
-            continue;
+            while((ch=getc(in)) !=0 && (ch!=':' && read_next_char(in)!='#'));
+            continue;   
         }
         /*skip single line comments*/
-        else if(ch=='#' && (read_next_char(in)!='#'))
+        else if(ch=='#')// && (read_next_char(in)!='#'))
         {
             while((ch=getc(in)) !=0 && ch!='\n'){}
             continue;
@@ -350,6 +349,8 @@ struct z *read_list(FILE *in)
     /*get the car*/
     pcar=read(in); 
     
+    if(pcar == obj_notok) return pcar;
+    
     read_skipws(in);
     ch=getc(in);
 
@@ -366,6 +367,7 @@ struct z *read_list(FILE *in)
         
         /*get the cdr*/
         pcdr=read(in);
+        if(pcdr == obj_notok) return pcdr;        
         
         read_skipws(in);
         ch=getc(in);
@@ -396,14 +398,13 @@ struct z *read_vector(FILE *in)
     read_skipws(in);
     ch=getc(in);
 
-    vec=make_vector(global_mem_pool, 4);
-
     /*got empty vector*/
     if(ch==']')
     {
-        return vec;
+        return obj_null;
     }
 
+    vec=make_vector(global_mem_pool, 4);
     ungetc(ch,in);
     
     read_skipws(in);
@@ -414,6 +415,8 @@ struct z *read_vector(FILE *in)
         ungetc(ch,in);
         
         pelem=read(in);
+        
+        if(pelem == obj_notok) return pelem;
         vec->val.v->push_back(pelem);
         
         read_skipws(in);
@@ -433,14 +436,16 @@ struct z *read_hashmap(FILE *in)
     struct z *value;
     string key="";
 
+    /*skip whitespaces and comments*/
     read_skipws(in);
     ch=getc(in);
 
     map=make_hashmap(global_mem_pool, 4);
     
+    /*got empty hashmap*/
     if(ch=='}')
     {
-        return map;
+        return obj_null;
     }
     ungetc(ch,in);    
     
@@ -488,6 +493,7 @@ struct z *read_hashmap(FILE *in)
                 /*get the cdr*/
                 value=read(in);
                 
+                if(value == obj_notok) return value;
                 map->val.m->insert( std::pair<string,struct z*>(key,value) );
                   
                 read_skipws(in);
@@ -502,11 +508,6 @@ struct z *read_hashmap(FILE *in)
                     key="";
                     continue;
                 }
-            }
-            else
-            {
-                fprintf(stderr,"error: incorrect hashmap syntax\n");
-                return obj_notok;
             }
         }
         else
@@ -754,54 +755,76 @@ struct z *eval(struct z *exp, struct z *scope)
 
 void print(FILE *out, struct z *exp)
 {
-    if(exp==obj_null)
+    if(exp == obj_null)
     {
         fprintf(out,"()");
+        return;
     }
-    else if(exp==obj_true)
+    else if(exp == obj_true)
     {
         fprintf(out,"true");
+        return;
     }
-    else if(exp==obj_false)
+    else if(exp == obj_false)
     {
         fprintf(out,"false");
+        return;
     }
-    else
+    else if(exp == obj_notok)
+    {
+        fprintf(out,"not-ok");
+        return;
+    }
+    else 
     {
         int t=type_get(exp);
-        switch(t)
-        {
-            case tchar:
-                fprintf(out,"char");
-                break;
-            case tfixnum:
-                fprintf(out,"%ld",exp->val.fixnum);
-                break;
-            case tflonum:
-                fprintf(out,"%lf",exp->val.flonum);
-                break;
-            case tstring:
-                fprintf(out,"\'%s\'",exp->val.s->c_str());
-                break;
-            case tlist:
-                fprintf(out,"(");
-                print_list(out,exp);
-                fprintf(out,")");
-                break;
-            case tvector:
-                fprintf(out,"[");
-                print_vector(out,exp);
-                fprintf(out,"]");
-                break;
-            case thashmap:
-                fprintf(out,"{ ");
-                print_hashmap(out,exp);
-                fprintf(out," }");
-                break;                
-            default:
-                fprintf(stderr,"error: invalid data type\n");
-                break;
-        }
+        
+        if(t == tchar)
+		{
+			fprintf(out,"char");
+			return;
+		}
+		else if(t == tfixnum)
+		{ 
+			fprintf(out,"%ld",exp->val.fixnum);
+			return;
+		}
+        else if(t == tflonum)
+		{ 
+			fprintf(out,"%lf",exp->val.flonum);
+			return;
+		}
+        else if(t == tstring)
+		{ 
+			fprintf(out,"\'%s\'",exp->val.s->c_str());
+			return;
+		}	
+        else if(t == tlist)
+		{ 
+			fprintf(out,"(");
+            print_list(out,exp);
+            fprintf(out,")");
+			return;
+		}
+        else if(t == tvector)
+		{ 
+			fprintf(out,"[");
+            print_vector(out,exp);
+			fprintf(out,"]");
+			return;
+		}
+        else if(t == thashmap)
+		{ 
+			fprintf(out,"{ ");
+            print_hashmap(out,exp);
+			fprintf(out," }");
+			return;
+		}                
+        else
+		{ 
+			fprintf(stderr,"error: invalid data type\n");
+			return;
+		}
     }
 }
 
