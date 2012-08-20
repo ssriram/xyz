@@ -1,9 +1,44 @@
+/*
+Copyright (c) 2010-2012 Sriram Srinivasan.
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software
+without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to
+whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall
+be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
+
+
+#include <string>
+#include <list>
+#include <vector>
+#include <map>
 
 
 struct z;
 struct mem_pool;
-struct interpreter;
-
 
 struct z *obj_null;
 struct z *obj_true;
@@ -30,7 +65,7 @@ struct z *obj_and;
 struct z *obj_or;
 struct z *obj_not;
 
-
+inline void type_init(struct z *obj, int type);
 inline int type_get(struct z *obj);
 inline void type_set(struct z *obj, int t);
 inline int istype(struct z *obj, int type);
@@ -108,25 +143,24 @@ int is_spl(int ch);
 int is_hex(int ch);
 
 
-struct z *read(FILE *in);
-int read_next_char(FILE *in);
-int read_expect(FILE *in);
-void read_skipws(FILE *in);
-struct z *read_list(FILE *in);
-struct z *read_vector(FILE *in);
-struct z *read_hashmap(FILE *in);
+struct z *zread(mem_pool *mp, FILE *in);
+int zread_next_char(FILE *in);
+void zread_skipws(FILE *in);
+struct z *zread_list(mem_pool *mp, FILE *in);
+struct z *zread_vector(mem_pool *mp, FILE *in);
+struct z *zread_hashmap(mem_pool *mp, FILE *in);
 
 
-struct z *eval(struct z *exp, struct z *scope);
+struct z *zeval(struct z *exp, struct z *scope);
 
 
-void print(FILE *out, struct z *exp);
-void print_list(FILE *out, struct z *exp);
-void print_vector(FILE *out, struct z *exp);
-void print_hashmap(FILE *out, struct z *exp);
+void zprint(FILE *out, struct z *exp);
+void zprint_list(FILE *out, struct z *exp);
+void zprint_vector(FILE *out, struct z *exp);
+void zprint_hashmap(FILE *out, struct z *exp);
 
 
-void repl(FILE *in, FILE *out, struct z *scope);
+void repl(mem_pool *mp, FILE *in, FILE *out, struct z *scope);
 
 
 int main(int agrc, char *agrv[]);
