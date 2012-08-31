@@ -37,6 +37,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <map>
 
 
+using namespace std;
+
 struct z;
 struct mem_pool;
 
@@ -85,6 +87,7 @@ struct z *make_string2(mem_pool *mp, char *s);
 struct z *make_string3(mem_pool *mp, std::string s);
 struct z *make_symbol1(mem_pool *mp, void *v, size_t s);
 struct z *make_symbol2(mem_pool *mp, char *s);
+struct z *make_symbol3(mem_pool *mp, size_t c);
 struct z *make_regex1(mem_pool *mp, void *v, size_t s);
 struct z *make_regex2(mem_pool *mp, char *s);
 struct z *make_list(mem_pool *mp, struct z *pcar, struct z *pcdr);

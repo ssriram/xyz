@@ -64,6 +64,7 @@ struct z
     union
     {
         int ch;
+        size_t sym;
         double flonum;
         long int fixnum;
         string *s;
@@ -73,13 +74,13 @@ struct z
             struct z *cdr;
         } list;
         vector<struct z*> *v;
-        map<string,struct z*> *m;
+        map<string, struct z*> *m;
         struct
         {
-            struct z *scope;
+            struct map<struct z*, struct z*> *scope;
             struct z *body;
         } fn;
-        struct z *(*nfn)(struct z *scope);
+        struct z *(*nfn)(struct map<struct z*, struct z*> *scope);
         FILE *in;
         FILE *out;
         struct
@@ -89,8 +90,8 @@ struct z
         } blob;
         struct
         {   
-            map<string,struct z*> *scope;
-            vector<struct z*> *symbols;
+            map<string, struct z*> *elements;
+            map<string, struct z*> *symbols;
         } module;
     } val;
 };
@@ -102,10 +103,11 @@ struct mem_pool
 };
 
 vector<string> error_stack;
+vector<string> symbols;
 
 inline void type_init(struct z *obj, int type)
 {
-    obj->flags=(0x00000000)|type;
+    obj->flags=(0x00000000) | type;
 }
 
 inline int type_get(struct z *obj)
@@ -184,9 +186,21 @@ struct z *make_string3(mem_pool *mp, string s)
     return p;
 }
 
+
 /*
 struct z *make_symbol1(mem_pool *mp, void *v, size_t s);
 struct z *make_symbol2(mem_pool *mp, char *s);
+*/
+
+struct z *make_symbol3(mem_pool *mp, size_t s)
+{
+    struct z *p = obj_make(mp);
+    type_init(p,tsymbol);
+    p->val.sym=s;
+    return p;
+}
+
+/*
 struct z *make_regex1(mem_pool *mp, void *v, size_t s);
 struct z *make_regex2(mem_pool *mp, char *s);
 */
@@ -286,7 +300,6 @@ int is_delim(int ch)
             ch=='#';
 }
 
-
 int is_term_delim(int ch)
 {
     return  ch==0 || 
@@ -294,7 +307,6 @@ int is_term_delim(int ch)
             ch==']' || 
             ch=='}';
 }
-
 
 int is_oper(int ch)
 {
@@ -347,6 +359,9 @@ struct z *zread_list(mem_pool *mp, FILE *in)
     int ch;
     struct z *pcar, *pcdr;
 
+    pcar=obj_null;
+    pcdr=obj_null;
+    
     /*skip whitespaces and comments*/
     zread_skipws(in);
     ch=getc(in);
@@ -356,6 +371,13 @@ struct z *zread_list(mem_pool *mp, FILE *in)
     {
         return obj_null;
     }
+    
+    else if(ch==':'||is_term_delim(ch))
+    {
+        error_stack.push_back("error: invaild list pair");
+        return obj_notok;
+    }
+    
     ungetc(ch,in);
     
     /*get the car*/
@@ -372,7 +394,6 @@ struct z *zread_list(mem_pool *mp, FILE *in)
         if(is_term_delim(ch))
         {
             error_stack.push_back("error: invaild list pair");
-            
             return obj_notok;
         }
         
@@ -385,7 +406,6 @@ struct z *zread_list(mem_pool *mp, FILE *in)
         if(ch!=')')
         {
             error_stack.push_back("error: invaild list pair");
-            
             return obj_notok;
         }
         
@@ -551,7 +571,6 @@ struct z *zread(mem_pool *mp, FILE *in)
             numbuff.append(1,ch);
             ch=getc(in);
         }
-    
         
         if(ch=='0') 
         {
@@ -615,33 +634,28 @@ struct z *zread(mem_pool *mp, FILE *in)
         if(ch!='.' || is_delim(ch) || is_oper(ch) || is_spl(ch))
         {
             ungetc(ch,in);
-            switch(id)
+            if(id == false)
             {
-                case false:
+                long int inum=0;
+                unsigned int hnum=0;
+                int num=0;
+                if(hex)
                 {
-                    long int inum=0;
-                    unsigned int hnum=0;
-                    int num=0;
-                    if(hex)
-                    {
-                        sscanf(numbuff.c_str(),"%x",&num);
-                        inum=(long int) num;
-                    }
-                    else
-                    {
-                        sscanf(numbuff.c_str(),"%ld",&inum);
-                        inum=(long int) inum;
-                    }
-                    return make_fixnum(mp,inum);
-                    break;
+                    sscanf(numbuff.c_str(),"%x",&num);
+                    inum=(long int) num;
                 }
-                case true:
+                else
                 {
-                    double d;
-                    sscanf(numbuff.c_str(),"%lf",&d);
-                    return make_flonum(mp,d);
-                    break;
+                    sscanf(numbuff.c_str(),"%ld",&inum);
+                    inum=(long int) inum;
                 }
+                return make_fixnum(mp,inum);
+            }
+            else
+            {
+                double d;
+                sscanf(numbuff.c_str(),"%lf",&d);
+                return make_flonum(mp,d);
             }
         }
         
@@ -651,6 +665,21 @@ struct z *zread(mem_pool *mp, FILE *in)
             error_stack.push_back("error: invaild number syntax");
             return obj_notok;
         }
+    }
+    
+    /*symbol or identifier*/
+    else if(isalpha(ch) || is_spl(ch))
+    {
+        str="";
+        while(isalpha(ch) || is_spl(ch))
+        {
+            str.append(1,ch);
+            ch=getc(in);
+        }
+        
+        symbols.push_back(str);
+        
+        return make_symbol3(mp, symbols.size()-1);
     }
     
     /*string*/
@@ -749,7 +778,7 @@ struct z *zread(mem_pool *mp, FILE *in)
     
     else if(ch=='(')
     {
-        struct z *l=zread_list(mp,in);
+        return zread_list(mp,in);
     }
     
     else if(ch=='[')
@@ -760,6 +789,11 @@ struct z *zread(mem_pool *mp, FILE *in)
     else if(ch=='{')
     {
         return zread_hashmap(mp,in);
+    }
+    
+    else if(is_oper(ch))
+    {
+        return obj_null;
     }
     
     else if(ch==EOF)
@@ -783,7 +817,13 @@ struct z *zeval(mem_pool *mp, struct z *exp, struct z *scope)
 
 void zprint(FILE *out, struct z *exp)
 {
-    if(exp == obj_null)
+    if(exp == obj_eof)
+    {
+        //fprintf(out,"()");
+        return;
+    }
+    
+    else if(exp == obj_null)
     {
         fprintf(out,"()");
         return;
@@ -848,7 +888,13 @@ void zprint(FILE *out, struct z *exp)
             zprint_hashmap(out,exp);
             fprintf(out," }");
             return;
-        }                
+        }
+        else if(t == tsymbol)
+        { 
+            fprintf(out,"%s",symbols[exp->val.sym].c_str());
+            return;
+        }
+        
         return;
     }
 }
@@ -944,6 +990,7 @@ int main(int agrc, char *agrv[])
     
     obj_null = new z();
     obj_notok = new z();
+    obj_eof = new z();
     
     repl(mp,stdin,stdout,scope);
     
