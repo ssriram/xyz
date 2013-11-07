@@ -676,6 +676,7 @@ struct z *zread(mem_pool *mp, FILE *in)
             str.append(1,ch);
             ch=getc(in);
         }
+        ungetc(ch,in);
         
         symbols.push_back(str);
         
