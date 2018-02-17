@@ -1,0 +1,542 @@
+------------------------------------------------------------------
+Copyright (c) 2010-2011 Sriram Srinivasan.
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software
+without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to
+whom the Software is furnished to do so, subject to the
+following conditions:
+
+
+The above copyright notice and this permission notice shall
+be included in all copies or substantial portions of the
+Software.
+
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+------------------------------------------------------------------
+
+
+expr
+    null |
+    undefined |
+    boolean |
+    number |
+    character |
+    string |
+    symbol |
+    regex |
+    list |
+    vector |
+    map
+
+    null
+        'null' |
+        zero |
+        '' |
+        '\u0000' |
+        '\x00' |
+        "" |
+        """""" |
+        '!()' |
+        '[]' |
+        '{}' |
+
+        zero
+            [+-] 0+ |
+            [+-] 0 . 0+ |
+            '0x' 0+ |
+            '0b' 0+
+
+    undefined
+        'undefined'
+
+    boolean
+        true |
+        false
+
+    number
+        fixnum |
+        flonum
+
+        sign
+            [+-]
+        binary
+            [01]
+        digit
+            [0-9]
+        hex
+            [0-9a-f] |
+            [0-9A-F]
+
+        fixnum
+            sign digit+ |
+            '0x' hex+ |
+            '0b' binary+
+
+        flonum
+            (sign digit+ decimalpoint digit) [exponent]
+
+            decimalpoint
+                '.'
+            exponent
+                (e|E) [sign] digit+
+
+    character
+        'chars'
+
+        chars
+            char |
+            escapeseq
+
+        char
+            any unicode character except control
+
+            escape
+                \
+            quote
+                '
+            dquote
+                "
+
+            control
+                escape |
+                quote |
+                dquote |
+
+        escapeseq
+            escape seq
+
+            seq
+                control |
+                / |
+                0 |
+                a |
+                b |
+                f |
+                n |
+                r |
+                t |
+                u hex hex hex hex |
+                x hex hex
+
+    string
+        dqstring |
+        tqstring
+
+        dqstring
+            "chars+"
+
+        tqstring
+            """tqchars+"""
+
+            tqchars - all characters except """ triplequotes
+                char |
+                control
+
+    symbol
+        pre name* post
+
+        pre
+            initalpa |
+            initspl
+
+            initalpa
+                [a-zA-Z]
+            initspl
+                # |
+                $ |
+                % |
+                ^ |
+                & |
+                * |
+                / |
+                = |
+                < |
+                > |
+                ? |
+                _
+
+        name
+            pre |
+            digit |
+            namespl
+
+            namespl
+                + |
+                - |
+                . |
+                @
+
+        post
+            + |
+            - |
+            ...
+
+    regex
+
+
+
+
+
+
+
+
+
+    syntactickw
+        exprkw |
+        else |
+        => |
+        def |
+        uquote |
+        uquote-splice |
+
+    exprkw
+        quote |
+        qquote |
+        fn |
+        if |
+        set |
+        do |
+        cond |
+        and |
+        or |
+        not |
+        case |
+        with |
+
+    list
+        '(' expr* ')' |
+        '(' expr+ : expr ')' |
+        prefix expr
+
+        prefix
+            ! |
+            ` |
+            ~ |
+            @ |
+            ~@
+
+    vector
+        '[' elements* ']'
+
+        elements
+            expr |
+            expr (, expr)+
+
+    map
+        '{' mappings* '}'
+
+        mappings
+            mapping |
+            mapping (, mapping)+
+
+        mapping
+            dqstring : expr
+
+
+expr =
+    oper? number | string | symbol |
+    list | vector | hashmap | regex |
+    null | false | true    
+number =
+    [-+]?([0-9]*\.)?[0-9]+([eE][-+]?[0-9]+)?
+string =
+    \" stringitem* \" |
+    \' stringitem* \'
+stringitem =
+    char | escape
+char =
+    [^\"\'\\]
+escape =
+    \\([\\bfnrt\'\"] | [x]hexchar{2} | [u]hexchar{4})
+hexchar =
+    [0123456789abcdefABCDEF]
+symbol
+    [a-zA-Z\%\^\&\*\-\_\=\+\|\:\;\<\>\/\?]+ [a-zA-Z0-9\%\^\&\*\-\_\=\+\|\:\;\<\>\/\?]*
+list =
+    \( \) |
+    \( listitem \)
+listitem =
+    expr |
+    expr \,? listitem
+vector =
+    \[ \] |
+    \[ vectoritem \]
+vectoritem =
+    expr |
+    expr \,? vectoritem
+hashmap =
+    \{ \} |
+    \{ hashmapitem \}
+hashmapitem =
+    key \:? expr |
+    key \:? expr \,? hashmapitem
+key =
+    string | symbol
+oper =
+    [\`\~\!\@] | decorator
+decorator =
+    \$ symbol
+
+
+
+
+number := [0-9.e]+
+string := \" [.]* \"
+special := [%^&*-_+=|<>?/]+
+symbol := special? [a-zA-Z]+ [a-zA-Z0-9]*
+oper := ([~`!@#$]+ value)
+list := \( (value [, ])* \)
+vector := \[ (value [, ])* \]
+map := \{ (string:value [, ])* \)\}
+value := number | string | symbol | operation | list | vector | map
+
+expr
+
+do expr end
+var id expr end
+if expr expr expr end
+lambda args do expr end
+call id args end
+
+==================================================================
+
+{define(fact,(n){if(=(n,0),1,*(n,fact(-(n,1))))})}
+
+(define fact (lambda (n) (if (= n 0) 1 (* n (fact (- n 1))))))
+
+define(fact,lambda(n,if(=(n,0),1,*(n,fact(-(n,1))))))
+
+
+{,,,,,,,}
+(,,,,{,,,},(),(,,,,{},,,(),(,,,{})),())
+(){}
+
+
+def(fact,(){})
+
+expr
+evalable
+fncall
+fndef
+data
+unevalable
+data
+
+{} - list
+main() - call
+, - separator
+' - quoted
+(){} - lambda
+[] - index
+
+=======================================================
+mapping
+    {}
+    { members }
+
+array
+    {}
+    { elements }
+
+block
+    {}
+    { statements }
+
+members
+    pair
+    pair , members
+
+pair
+    string : value
+
+elements
+    value 
+    value , elements
+
+statements
+    value
+    value ; statements
+
+parameters
+    variable
+    variable , parameters
+
+arguments
+    value
+    value , arguments
+
+funcdef
+    () {}
+    () { statements }
+    () { statements } ()
+    ( parameters ) { statements }
+    ( parameters ) { statements } ( arguments )
+
+funccall
+    variable ()
+    variable ( arguments )
+
+variable
+	<identifier>	<initial> <subsequent>* | + | - | ...
+	<initial	<letter> | ! | $ | % | & | * | / | : | < | = | > | ? | ~ | _ | ^
+	<subsequent>	<initial> | <digit> | . | + | -
+	<letter>	a | b | ... | z
+	<digit>	0 | 1 | ... | 9
+
+value
+    string
+    number
+    true
+    false
+    null
+    mapping
+    array
+    variable
+    funcdef
+    funccall
+    
+string
+    ""
+    " chars "
+    ''
+    ' chars '
+
+chars
+    char
+    char chars
+
+char
+    any-Unicode-character-
+        except-"-or-\-or-
+        control-character
+    \"
+    \'
+    \\
+    \/
+    \b
+    \f
+    \n
+    \r
+    \t
+    \u four-hex-digits 
+    \x 2 hex digits
+
+
+number
+    int
+    int frac
+    int exp
+    int frac exp 
+
+int
+    digit
+    digit1-9 digits
+    - digit
+    - digit1-9 digits 
+
+frac
+    . digits
+
+exp
+    e digits
+
+digits
+    digit
+    digit digits
+
+e
+    e
+    e+
+    e-
+    E
+    E+
+    E-
+============================================================
+
+Fundamental forms: define, lambda, if, quote, unquote, unquote-splicing, quasiquote, define-syntax, let-syntax, letrec-syntax, syntax-rules, set!
+Library forms: do, let, let*, letrec, cond, case, and, or, begin, named let, delay 
+
+
+define v1 v2 v3 v4 : 2 3 3.564645 3224534 ;
+define v4 : 23232 ;
+define str : "hello world" ;
+lambda main a b c d : if a > b : c else d ; ; ;
+() main : 2 3 4 5 ;
+
+if : () > : a b ; ; | a = b : set a : 34 ; ;
+
+if
+
+\define v1 \lambda \ 
+
+outputs process inputs 
+
+(
+(def abc 2345)
+(def fact (fn (n) (if (= n 0) 1 (* n (fact (- n 1))))))
+)
+
+def(abc,2345)
+def(fact,(n){if(=(n,0);1;*(n,fact(-(n,1)))})
+
+
+
+
+""
+''
+{}
+func(){} function definition
+func() call
+
+
+
+
+:def fact :fn :n; :if := n 0; 1 :* n :fact :- n 1;;;;;;
+
+def fact:fn n:if n=0:1|else fact(n-1);
+
+if <expr>:<expr>*|else <expr>*;
+
+def(abc,234)
+x
+[def(fact,fn([n],if(=(n,0),1,*(n,fact(-(n,1))))))]
+
+def fact: fn [n]: if = n 0: 
+
+
+
+
+def(fact,(n){if(=(n,0);1;*(n,fact(-(n,1)))})
+def(a,b);
+fact(123);
+(a,b,c){{b;c;a}}(3,2,1);
+
+==================
+
+def fact(x):
+	if x=0:
+		return 1
+	else:
+		return fact(x*(x-1))
+
+
+
+
+
+def fact(x):if x=0:return 1;else:return fact(x*(x-1));
+
+
+fact(x){if(==(x,0),return(1),return(fact(*(x,-(x,1))))}
+
